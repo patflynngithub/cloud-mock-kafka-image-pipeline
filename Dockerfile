@@ -11,5 +11,6 @@ RUN apk add python3 && \
 
 # Copy the source code into the container
 COPY *.py ./
+COPY constants/*.py ./constants
 EXPOSE 9092
 

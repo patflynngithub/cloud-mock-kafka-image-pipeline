@@ -2,6 +2,8 @@
 # (client)        and sends an alert Kafka message if the analysis uncovers possible
 #                 interesting phenomena
 
+from constants.CONSTANTS import *
+
 from kafka import KafkaConsumer
 import json
 
@@ -15,6 +17,7 @@ consumer = KafkaConsumer(
     value_deserializer=lambda v: json.loads(v.decode('utf-8')) # Deserialize messages from JSON bytes
 )
 
+print("CODE_DIR = " + CODE_DIR)
 print("Starting image analysis client ...")
 for message in consumer:
     print(f"Received message: Topic={message.topic}, Partition={message.partition}, Offset={message.offset}, Key={message.key}, Value={message.value}")

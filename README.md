@@ -4,7 +4,7 @@
 
 This is a mock image processing pipeline using Apache Kafka
 
-It uses python Kafka clients to the image processing work.
+It uses python Kafka clients to do the image processing work.
 
 ## <u>Commands</u>
 
