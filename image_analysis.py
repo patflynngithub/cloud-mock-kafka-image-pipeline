@@ -1,4 +1,4 @@
-# IMAGE ANALYZER: "receives" the image path Kafka message, analyzes the image,
+# IMAGE ANALYZER: receives the Kafka message from the image receiving client, analyzes the images,
 # (client)        and sends an alert Kafka message if the analysis uncovers possible
 #                 interesting phenomena
 
@@ -18,7 +18,8 @@ consumer = KafkaConsumer(
 )
 
 print("CODE_DIR = " + CODE_DIR)
-print("Starting image analysis client ...")
+print("Starting image analyzer client")
+
 for message in consumer:
     print(f"Received message: Topic={message.topic}, Partition={message.partition}, Offset={message.offset}, Key={message.key}, Value={message.value}")
 

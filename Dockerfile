@@ -7,10 +7,14 @@ WORKDIR /pipeline
 USER root
 RUN apk add python3 && \
     apk add py3-pip && \
-    pip install kafka-python --break-system-packages
+    pip install kafka-python --break-system-packages && \
+    pip install Pillow --break-system-packages
 
 # Copy the source code into the container
 COPY *.py ./
-COPY constants/*.py ./constants
+COPY constants/*.py ./constants/
+COPY image_original/* ./image_original/
+
+
 EXPOSE 9092
 

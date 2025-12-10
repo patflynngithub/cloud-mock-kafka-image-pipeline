@@ -2,4 +2,6 @@
                -----------------------
 
 - clean up CONSTANTS package/module setup
+- finish image_analysis Kafka client code
+- create interesting analysis result alert Kafka client
 
