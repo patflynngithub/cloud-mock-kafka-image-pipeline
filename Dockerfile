@@ -7,6 +7,7 @@ WORKDIR /pipeline
 USER root
 RUN apk add python3 && \
     apk add py3-pip && \
+    pip install numpy --break-system-packages && \
     pip install kafka-python --break-system-packages && \
     pip install Pillow --break-system-packages
 

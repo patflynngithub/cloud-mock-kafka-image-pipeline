@@ -12,7 +12,7 @@ import os
 import shutil
 
 from PIL import Image
-
+    
 from kafka import KafkaProducer
 import json
 
@@ -35,7 +35,7 @@ def generate_image(image_num):
 
         # modify the previous image to generate the new image
         if image_num % 4 == 3:
-            print("... Rptating image")
+            print("... Rotating image")
             prev_image = Image.open(prev_image_recv_path)
             rotated_image = prev_image.rotate(90)
             rotated_image.save(image_recv_path)
@@ -76,15 +76,16 @@ def receive_image(image_num, image_recv_path, prev_image_recv_path):
 # Main part of the program
 if __name__ == "__main__":
 
-    print("Starting image receiving client ...")
-
     # Create a Kafka Producer instance
     producer = KafkaProducer(
         bootstrap_servers=['localhost:9092'],  # Replace with your Kafka broker address
         value_serializer=lambda v: json.dumps(v).encode('utf-8') # Serialize messages to JSON bytes
     )
 
+    print()
+    print("Starting image receiving client ...")
     print("CODE_DIR = ",CODE_DIR)
+    print()
 
     topic_name = 'image_analysis'
     image_num  =  0
@@ -93,7 +94,7 @@ if __name__ == "__main__":
         print("Generating Image # = ", image_num)
         image_recv_path, prev_image_recv_path = generate_image(image_num)
 
-        print("Receiving Image # = ", image_num)
+        print("Receiving Image  # = ", image_num)
         receive_image(image_num, image_recv_path, prev_image_recv_path)
 
         # send a Kafka message to the image analysis client
@@ -101,7 +102,9 @@ if __name__ == "__main__":
         producer.send(topic_name, message_data)
         # Flush message to ensure delivery
         producer.flush()
+
         print(f"Message sent to topic '{topic_name}': {message_data}")
+        print()
 
         image_num += 1
 

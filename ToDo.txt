@@ -2,6 +2,7 @@
                -----------------------
 
 - clean up CONSTANTS package/module setup
-- finish image_analysis Kafka client code
-- create interesting analysis result alert Kafka client
+- investigate ramifications of using -u="root" in docker run command
+- add "phenomenon of interest" alert Kafka producer messaging to the image_analysis client code
+- create the "phenomenon of interest" alert consumer messaging Kafka client code
 
