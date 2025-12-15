@@ -1,1 +1,1 @@
-testing gcm credential storage #6
+testing gcm credential storage #7
