@@ -1,1 +1,0 @@
-testing gcm credential storage #7
