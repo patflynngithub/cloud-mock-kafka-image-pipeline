@@ -1,9 +1,9 @@
-               To Do for mock pipeline
-               -----------------------
+To Do for mock pipeline
+-----------------------
 
 - clean up CONSTANTS package/module setup
 - investigate ramifications of using -u="root" in docker run command
-- create application to allow image event subscribers to view the event
+- improve image event subscriber Image Event Viewing program
 - automate the process of building/running the Apache Kafka image/container and opening the command line
   windows for the Kafka clients and running them
 

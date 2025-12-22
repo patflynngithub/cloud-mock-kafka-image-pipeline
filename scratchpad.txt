@@ -1,0 +1,4 @@
+docker run -it --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix tkinter-app-image
+
+
+docker run -it --rm -e DISPLAY=$DISPLAY -v /home/patrick/mock_pipeline:/pipeline --name pipeline_container -u="root" -p 9092:9092 pipeline_image

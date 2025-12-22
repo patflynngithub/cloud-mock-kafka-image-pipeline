@@ -23,6 +23,12 @@ $ docker stop pipeline_container
 $ docker rm pipeline_container  
 $ docker rmi pipeline_image
 
+If you have run this mock application before, you can clear the data directories:  
+
+You can empty the *image_\** directories (except for image_original/) using the following command:  
+
+$ ./clean_image_dirs.sh  
+
 Then build/run the image/container. Running the container automatically runs Apache Kafka.
 
 $ docker build -t pipeline_image .  
@@ -56,7 +62,7 @@ $ python image_receiving.py
 
 
 
-You can empty the *image_\** directories (except for image_original/) using the following command:  
+### You can also view the image event pictures by running the Image Event Viewer program in the *mock_pipeline/* directory. The tkinter, Pillow and os libraries are required :  
 
-$ ./clean_image_dirs.sh
+$ python image_event_viewer.py
 
