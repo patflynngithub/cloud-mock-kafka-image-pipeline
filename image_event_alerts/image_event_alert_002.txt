@@ -1,2 +1,0 @@
-Image event #: 2
-Image event database path: /pipeline/image_event_database/image_event_002.txt

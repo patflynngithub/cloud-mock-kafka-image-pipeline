@@ -1,7 +1,7 @@
 """
-This is standalone (from Apache Kafka) python program that displays an image event
+This standalone (standalone from Apache Kafka) python program displays an image event that occurred on the mock image pipeline.
 
-It accepts input of the image event alert number and displays the images making up the event
+It accepts input of the image event alert number and displays the image event's images
 """
 
 from constants.CONSTANTS import *
@@ -10,131 +10,154 @@ import tkinter as tk
 from PIL import ImageTk, Image
 import traceback
 
+# =======================================================================================
+
 class ImageEventAlert(tk.Tk):
 
     def __init__(self):
 
         """
-        Sets up the tkinter GUI interface
+        Sets up the Tkinter GUI
         """
 
         super().__init__()
 
         self.title("View Image Event")
-        self.geometry("1200x500")
+        self.geometry("1200x600")
 
-        alert_num_label = tk.Label(self, text="Input Image Event Alert # and press ENTER", bg="lightgrey", fg="black", pady=10)
-        self.enter_image_event_alert_num = tk.Text(self, width=10, height=1)
+        # Set up input area
 
-        alert_num_label.pack(side=tk.TOP, fill=tk.X)
+        alert_num_entry_instruction = tk.Label(self, text="Input Image Event Alert # (positive integer) and press ENTER", bg="lightgrey", fg="black", pady=10)
+        self.enter_image_event_alert_num = tk.Text(self, width=20, height=1)
+        self.status_label = tk.Label(self, text = "", pady=10)
+
+        alert_num_entry_instruction.pack(side=tk.TOP, fill=tk.X)
         self.enter_image_event_alert_num.pack(side=tk.TOP)
+        self.status_label.pack(side=tk.TOP)
+
         self.enter_image_event_alert_num.focus_set()
-
         self.bind("<Return>", self.process_image_event_alert)
-
-        images_frame = tk.Frame(self, bg='lightblue', width=400, height=150)
 
         # ------------------------------------
 
-        image_frame = tk.Frame(images_frame, bg='lightblue', width=400, height=150)
+        all_images_frame = tk.Frame(self, bg='lightblue', width=400, height=150)
 
-        self.image_label = tk.Label(image_frame, image=None, text="Image", compound=tk.TOP)
-    
+        # Set up Image display
+
+        image_frame = tk.Frame(all_images_frame, bg='lightblue', width=400, height=150)
+
+        self.image_label  = tk.Label(image_frame, image=None, text="Image", compound=tk.TOP)
+        self.image_detail = tk.Label(image_frame, text="", width=20, compound=tk.TOP, bg='lightblue')
+
         self.image_label.pack(side=tk.TOP, pady=20)
+        self.image_detail.pack(side=tk.TOP, pady=20)
         image_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # ------------------------------------
 
-        diff_image_frame = tk.Frame(images_frame, bg='lightblue', width=400, height=150)
+        # Set up Difference image display
 
-        self.diff_image_label = tk.Label(diff_image_frame, image=None, text="Difference", compound=tk.TOP)
+        diff_image_frame = tk.Frame(all_images_frame, bg='lightblue', width=400, height=150)
+
+        self.diff_image_label  = tk.Label(diff_image_frame, image=None, text="Difference image", compound=tk.TOP)
+        self.diff_image_detail = tk.Label(diff_image_frame, text="", width=20, compound=tk.TOP, bg='lightblue')
 
         self.diff_image_label.pack(side=tk.TOP, pady=20)
+        self.diff_image_detail.pack(side=tk.TOP, pady=20)
         diff_image_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # ------------------------------------
 
-        prev_image_frame = tk.Frame(images_frame, bg='lightblue', width=400, height=150)
+        # Set up Previous image display
 
-        self.prev_image_label = tk.Label(prev_image_frame, image=None, text="Previous Image", compound=tk.TOP)
+        prev_image_frame = tk.Frame(all_images_frame, bg='lightblue', width=400, height=150)
+
+        self.prev_image_label  = tk.Label(prev_image_frame, image=None, text="Previous Image", compound=tk.TOP)
+        self.prev_image_detail = tk.Label(prev_image_frame, text="", width=20, compound=tk.TOP, bg='lightblue')
     
         self.prev_image_label.pack(side=tk.TOP, pady=20)
+        self.prev_image_detail.pack(side=tk.TOP, pady=20)
         prev_image_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        images_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        all_images_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
 # --------------------------------------------------------------------------------------------
 
     def process_image_event_alert(self, event=None):
 
-        # print("Got to display_image_event function")
+        """
+        Processes the input image event alert number, gets the image event info and displays the image event's images
+        """
 
-        try:
-            # Get the image event alert number from the entry widget and convert to an integer
-            alert_num_str = self.enter_image_event_alert_num.get(1.0, tk.END).strip()
-            alert_num = int(alert_num_str)
-            self.enter_image_event_alert_num.delete("1.0", "end")
+        # Get the image event alert number from the input
+        alert_num_str = self.enter_image_event_alert_num.get(1.0, tk.END).strip()
+        self.enter_image_event_alert_num.delete("1.0", "end")
 
-            image_event_alert_path = f"{IMAGE_EVENT_ALERTS_DIR}/image_event_alert_{alert_num:03d}.txt"
+        if not alert_num_str.isdecimal():
+            self.status_label.config(text=f"Improper entry ({alert_num_str}). Enter a positive integer", fg="red")
+            self.make_labels_blank()
+            return
 
-            if image_event_alert_path and os.path.exists(image_event_alert_path):
+        alert_num = int(alert_num_str)
+        image_event_alert_path = f"{IMAGE_EVENT_ALERTS_DIR}/image_event_alert_{alert_num:03d}.txt"
 
-                image_path, diff_image_path, prev_image_path = get_image_paths(image_event_alert_path)
-                print(image_path)
-                print(diff_image_path)
-                print(prev_image_path)
+        if not os.path.exists(image_event_alert_path):
 
-                # Image
-                # -----
+            self.status_label.config(text=f"Image event alert # {alert_num} doesn't exist", fg="red")
+            self.make_labels_blank()
 
-                img = Image.open(image_path)
-                img = img.resize((300, 300), Image.Resampling.LANCZOS)
-                photo = ImageTk.PhotoImage(img)
-                self.image_label.config(image=photo)
-                # Keep a reference to the image to prevent garbage collection
-                self.image = photo 
+        else:
 
-                # Difference image
-                # ----------------
+            image_path, diff_image_path, prev_image_path = get_image_paths(image_event_alert_path)
 
-                img = Image.open(diff_image_path)
-                img = img.resize((300, 300), Image.Resampling.LANCZOS)
-                photo = ImageTk.PhotoImage(img)
-                self.diff_image_label.config(image=photo)
-                # Keep a reference to the image to prevent garbage collection
-                self.diff_image = photo 
+            # Image
+            # -----
 
-                # Previous image
-                # --------------
+            img = Image.open(image_path)
+            img = img.resize((300, 300), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            self.image_label.config(image=photo)
+            self.image_detail.config(text=os.path.basename(image_path))
+            # Keep a reference to the image to prevent garbage collection
+            self.image = photo 
 
-                img = Image.open(prev_image_path)
-                img = img.resize((300, 300), Image.Resampling.LANCZOS)
-                photo = ImageTk.PhotoImage(img)
-                self.prev_image_label.config(image=photo)
-                # Keep a reference to the image to prevent garbage collection
-                self.prev_image = photo 
+            # Difference image
+            # ----------------
 
-                # ----------------
+            img = Image.open(diff_image_path)
+            img = img.resize((300, 300), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            self.diff_image_label.config(image=photo)
+            self.diff_image_detail.config(text=os.path.basename(diff_image_path))
+            # Keep a reference to the image to prevent garbage collection
+            self.diff_image = photo 
 
-                # status_label.config(text=f"Displaying image, difference image and previous image", fg="green")
+            # Previous image
+            # --------------
 
-            else:
-                # status_label.config(text=f"Can't find image alert # {image_event_alert_num} information", fg="red")
-                print("hit else statement")
-                self.image_label.config(image='')       # Clear the image if not found
-                self.diff_image_label.config(image='')  # Clear the difference image if not found
-                self.prev_image_label.config(image='')  # Clear the previous image if not found
+            img = Image.open(prev_image_path)
+            img = img.resize((300, 300), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            self.prev_image_label.config(image=photo)
+            self.prev_image_detail.config(text=os.path.basename(prev_image_path))
+            # Keep a reference to the image to prevent garbage collection
+            self.prev_image = photo 
 
-        except ValueError:
-            # status_label.config(text="Invalid input. Please enter a valid number.", fg="red")
-            print(f"ValueError exception")
-            self.image_label.config(image='')       # Clear the image if input is invalid
-            self.diff_image_label.config(image='')  # Clear the image if input is invalid
-            self.prev_image_label.config(image='')  # Clear the image if input is invalid
-        except Exception as e:
-            # status_label.config(text=f"An error occurred: {e}", fg="red")
-            traceback.print_exc()
-            print(f"An error occurred: {e}")
+            # ----------------
+
+            self.status_label.config(text=f"Displaying image, difference image and previous image", fg="green")
+
+    def make_labels_blank(self):
+
+        """ Used to clear labels if there is a bad image event alert number entry """
+
+        self.image_label.config(image='')
+        self.diff_image_label.config(image='')
+        self.prev_image_label.config(image='')
+        # ---
+        self.image_detail.config(text="")
+        self.diff_image_detail.config(text="")
+        self.prev_image_detail.config(text="")
 
 # -------------------------------------------------------------------------------------------------------------
 
@@ -151,7 +174,7 @@ def extract_path(a_string):
 
 def get_image_paths(image_event_alert_path):
 
-    """ Get image paths from image event file. """
+    """ Use Image event alert file to get image paths from image event file. """
 
     # Get image event file path from image event alert file
     try:
@@ -160,10 +183,8 @@ def get_image_paths(image_event_alert_path):
     
         for line in lines:
             line = line.strip()
-            print(line)
 
         image_event_path = extract_path(lines[1])
-        print("Image event path: ", image_event_path)
 
     except FileNotFoundError:
         print(f"Error: Image event alert file {image_event_alert_path}' was not found.")
@@ -177,7 +198,6 @@ def get_image_paths(image_event_alert_path):
     
         for line in lines:
             line = line.strip()  # strip() removes leading/trailing whitespace, including \n
-            print(line) 
 
         image_path      = extract_path(lines[2])
         prev_image_path = extract_path(lines[3])
@@ -190,7 +210,6 @@ def get_image_paths(image_event_alert_path):
         print(f"An error occurred: {e}")
 
     return image_path, diff_image_path, prev_image_path
-    # return image_database_path, prev_image_database_path, diff_image_database_path
 
 # ========================================================================================
 

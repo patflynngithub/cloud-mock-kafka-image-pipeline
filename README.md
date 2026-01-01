@@ -23,13 +23,11 @@ $ docker stop pipeline_container
 $ docker rm pipeline_container  
 $ docker rmi pipeline_image
 
-If you have run this mock application before, you can clear the data directories:  
-
-You can empty the *image_\** directories (except for image_original/) using the following command:  
+If you have run this mock application before, you should clear the data directories. You can empty the *image_\** directories (except for the image in image_original/, which you want to keep) using the following command:  
 
 $ ./clean_image_dirs.sh  
 
-Then build/run the image/container. Running the container automatically runs Apache Kafka.
+Then build/run the docker image/container. Running the container automatically runs Apache Kafka.
 
 $ docker build -t pipeline_image .  
 $ docker run -v \<path where this application's code files are stored>:/pipeline --name pipeline_container -u="root" -p 9092:9092 pipeline_image

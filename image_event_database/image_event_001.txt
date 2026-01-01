@@ -1,5 +1,0 @@
-Image event #: 1
-Image event: picture has changed
-/pipeline/image_database/00003.jpg
-/pipeline/image_database/00002.jpg
-/pipeline/image_event_database/image_event_001.jpg
