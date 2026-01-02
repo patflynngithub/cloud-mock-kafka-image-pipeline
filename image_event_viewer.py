@@ -145,7 +145,7 @@ class ImageEventAlert(tk.Tk):
 
             # ----------------
 
-            self.status_label.config(text=f"Displaying image, difference image and previous image", fg="green")
+            self.status_label.config(text=f"Image event alert # {alert_num}. Displaying image, difference image and previous image", fg="green")
 
     def make_labels_blank(self):
 

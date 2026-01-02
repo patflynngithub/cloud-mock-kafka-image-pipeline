@@ -1,7 +1,9 @@
-# IMAGE ANALYZER: receives Kafka messages from the image receiving client, analyzes the images
-# (client)        for an image event of interest, and, if an image event is detected, it adds the 
-#                 event to the image event database and it sends a Kafka message to the image 
-#                 event alerting client
+"""
+IMAGE ANALYSIS:  receives Apache Kafka messages from the image receiving client, analyzes images
+(Kafka client)   for an image event of interest, and, if an image event is detected, it adds the 
+                 event to the image event "database" and it sends a Kafka message to the image 
+                 event alerting client
+"""
 
 from constants.CONSTANTS import *
 
@@ -15,12 +17,15 @@ import json
 
 # -----------------------------------------------------------------------------------------------------
 
-# Compares the two most recent images in the pipeline to see if they are different
-# from each other. Is so, creates an image event and stores it in the "database."
 def analyze_images(image_num, prev_image_num, image_event_num):
+    """
+    Compares the two most recent images in the pipeline to see if they are different
+    from each other. Is so, creates an image event and stores it in the image event 
+    "database."
+    """
 
     # if no previous image
-    if image_num == 0:
+    if image_num == 1:
         print("First received image. No image to compare it with")
         return [False]
 
@@ -32,16 +37,17 @@ def analyze_images(image_num, prev_image_num, image_event_num):
     image      = np.array(Image.open(image_analysis_path)).astype(float)
     prev_image = np.array(Image.open(prev_image_analysis_path)).astype(float)
 
+    # Analysis to see if the two images are different
     difference = image - prev_image
     l2_norm = np.linalg.norm(difference)
     print(f"l2 norm = {l2_norm}")
 
-    # afer comparing the most recent two images, the previous image is not needed
+    # After comparing the two most recent images, the previous image is not needed
     # in the image analysis directory anymore. The current image will become the
-    # previous image for the next Kafka message
+    # previous image for the next image analysis.
     os.remove(prev_image_analysis_path)
 
-    # if we are dealing with the last generated image, it doesn't need to be kept around
+    # If we are dealing with the last received image, it doesn't need to be kept around
     # in the image analysis directory to later function as the previous image 
     if image_num == TOTAL_NUM_IMAGES:
         os.remove(image_analysis_path)
@@ -64,8 +70,7 @@ def analyze_images(image_num, prev_image_num, image_event_num):
 
         print(f"Image event #{image_event_num}: images {prev_image_num} and {image_num} are different")
 
-        # Store image event difference picture in image event "database"
-
+        # Store image event difference image in image event "database"
         image_event_image_db_path = IMAGE_EVENT_DB_DIR + "/" + f"image_event_{image_event_num:03d}" + ".jpg"
         diff_image.save(image_event_image_db_path)
         diff_image.close()
@@ -76,8 +81,9 @@ def analyze_images(image_num, prev_image_num, image_event_num):
         image_db_path       = IMAGE_DB_DIR       + "/" + f"{image_num:05d}"                   + ".jpg"
         prev_image_db_path  = IMAGE_DB_DIR       + "/" + f"{prev_image_num:05d}"              + ".jpg"
 
-        event_file_lines = [f"Image event #: {image_event_num}", "Image event: picture has changed",
-                            image_db_path, prev_image_db_path, image_event_image_db_path]
+        event_file_lines = [f"Image event #: {image_event_num}",
+                             "Image event: picture has changed",
+                              image_db_path, prev_image_db_path, image_event_image_db_path]
 
         with open(image_event_db_path, "w") as file:
             for line in event_file_lines:
@@ -89,36 +95,34 @@ def analyze_images(image_num, prev_image_num, image_event_num):
 
 # ===================================================================================================
 
-# Main part of program
-
 if __name__ == "__main__":
 
     # Create a Kafka Consumer instance for receiving messages from the 
-    # image_receiving client
+    # image receiving client
     consumer_topic = IMAGE_ANALYSIS_TOPIC
     consumer = KafkaConsumer(
-        consumer_topic,  # Topic to consume from
-        group_id='image_analysis_group', # Consumer group for offset management
-        bootstrap_servers=['localhost:9092'], # Replace with your Kafka broker address
-        auto_offset_reset='earliest', # Start consuming from the beginning if no offset is found
-        enable_auto_commit=True, # Automatically commit offsets
-        value_deserializer=lambda v: json.loads(v.decode('utf-8')) # Deserialize messages from JSON bytes
+        consumer_topic,
+        group_id='image_analysis_group',
+        bootstrap_servers=['localhost:9092'],
+        auto_offset_reset='earliest',
+        enable_auto_commit=True,
+        value_deserializer=lambda v: json.loads(v.decode('utf-8'))
     )
 
     # Create a Kafka Producer instance for sending messages to the image event alerting client
     producer = KafkaProducer(
-        bootstrap_servers=['localhost:9092'],  # Replace with your Kafka broker address
-        value_serializer=lambda v: json.dumps(v).encode('utf-8') # Serialize messages to JSON bytes
+        bootstrap_servers=['localhost:9092'],
+        value_serializer=lambda v: json.dumps(v).encode('utf-8')
     )
-
-    # image events will use this variable
-    image_event_num = 1
 
     print()
     print("Starting image analyzer client")
     print("CODE_DIR = " + CODE_DIR)
     print()
 
+    image_event_num = 1
+
+    # Receive and handle Kafka messages from the Kafka image receiving client
     for message in consumer:
 
         print(f"Received message: Topic={message.topic}, Value={message.value}")
@@ -126,23 +130,29 @@ if __name__ == "__main__":
         image_num      = message.value["image_num"]
         prev_image_num = image_num - 1
 
-        # analyze current and previous images to see if the two are the same picture.
-        # If so, create an image event and store in the image_event "database"
+        # Analyze the current image and the previous image to see if the two are different.
+        # If so, this function will also create an image event info file and store it in the
+        # image event "database"
         retvals = analyze_images(image_num, prev_image_num, image_event_num)
+
+        # No image event
         if retvals[0] == False:
             print()
             continue
+
+        # An image event has occurred
         else:
+            # extract where image event info is stored
             image_event_db_path = retvals[1]
 
-            # Create and send a image event message to the image event alerting client
-
+            # Create and send an image event message to the image event alerting Kafka client
             message_data = {'image_event_num': image_event_num, 'image_event_db_path': image_event_db_path}
             producer.send(IMAGE_EVENT_ALERT_TOPIC, message_data)
             # Flush message to ensure delivery
             producer.flush()
-            print(f"Sent image event # {image_event_num} message to the image event alerting client")
+
+            print(f"Sent image event # {image_event_num} message to the image event alerting Kafka client")
+            print()
 
             image_event_num += 1
-            print()
 
