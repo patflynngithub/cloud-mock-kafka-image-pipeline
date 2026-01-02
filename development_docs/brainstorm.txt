@@ -1,0 +1,19 @@
+This is a brainstorm of thoughts and questions about the Caltech image pipeline for the Roman Space Telescope
+
+While it starts with the image reception part of the pipeline, the entries are allowed to be random order in order to encourage the brainstorming process.
+
+=========================================================================
+
+- Will the Caltech image pipeline be the repository responsible for safeguarding the existence of the images?
+    - How secure and fault tolerant should the image, image event, image event subscriber, and image event alerts databases be?
+- Will there be scheduled offline periods in image stream?
+    - How will these be communicated to the pipeline or Caltech?
+- Is it expected that there will be few or many unanticpated disruptions in the image stream?
+    - How will these be sensed by the image pipeline?
+    - What should the image pipeline do in this case?
+- Will there be more than one type of image received?
+- Will the images vary in width, height or "color/greyscale" density?
+- What is the mechanism of image delivery to the pipeline?
+- What is the rate of image delivery to the pipeline (i.e., images per hour)
+- Is the image delivery bursty?
+
