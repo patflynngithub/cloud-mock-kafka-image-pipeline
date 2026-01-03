@@ -4,6 +4,6 @@ To Do for mock pipeline
 - clean up CONSTANTS package/module setup
 - investigate ramifications of using -u="root" in docker run command
 - automate the process of building/running the Apache Kafka image/container and opening the command line
-  windows for the Kafka clients and running them
+  windows for the python Kafka clients and running them
 - do tkinter stuff inside of container?
 

@@ -1,19 +1,65 @@
 This is a brainstorm of thoughts and questions about the Caltech image pipeline for the Roman Space Telescope
 
-While it starts with the image reception part of the pipeline, the entries are allowed to be random order in order to encourage the brainstorming process.
+Language
+--------
+
+- an image event is an image that has a positive result when analyzed with a particular technique
+
 
 =========================================================================
 
-- Will the Caltech image pipeline be the repository responsible for safeguarding the existence of the images?
+Image Receiving
+---------------
+
+- Will the Caltech image pipeline be the primary repository responsible for safeguarding the long-term existence of the images?
+    - if not, how long should images be kept?
     - How secure and fault tolerant should the image, image event, image event subscriber, and image event alerts databases be?
 - Will there be scheduled offline periods in image stream?
     - How will these be communicated to the pipeline or Caltech?
 - Is it expected that there will be few or many unanticpated disruptions in the image stream?
     - How will these be sensed by the image pipeline?
     - What should the image pipeline do in this case?
-- Will there be more than one type of image received?
-- Will the images vary in width, height or "color/greyscale" density?
+- What type(s)/size(s) of images will be received?
 - What is the mechanism of image delivery to the pipeline?
-- What is the rate of image delivery to the pipeline (i.e., images per hour)
-- Is the image delivery bursty?
+- What is the rate of image delivery to the pipeline (e.g., images per hour)
+- Is the image delivery rate constant or highly variable?
+- How much of a possibility is there of an image being corrupt?
+- Are there multiple types of images that needed to be handled separately because
+  of the telescope using its technology in a different way?
+- what info will be provided in addition to the image itself?
+
+
+Image Analysis
+--------------
+
+- How many analysis techniques will be appled to the images?
+- What is the maximum image lag used in analyzing a current image?
+- Is there a possbility of an analysis technique being changed or its
+  tolerances adjusted so that past image events would no longer be image events
+  or vice versa?
+     - what should be done in this case?
+     - it may be that an image analysis technique should have version numbers
+- does IPAC have access to already written code for image analysis techniques
+  that will be used in the image pipeline?
+     - even if it's not Python code, we could still likely interface with it,
+       thereby saving time if the code is good enough
+
+
+Image Event Alerts
+------------------
+
+- How is it envisioned that people will subscribe to image events they are interested in?
+- Will this process be open to the public without a login process?
+- What kind of alerts will be sent? Emails? Texts?
+- How should email alert failures be handled?
+- How long will a person's image event subscription remain active
+- How many subscribers is anticpated?
+
+
+Image Event Viewer (standalone)
+-------------------------------
+
+- Is it anticipated that this front-end be a Python GUI or a webpage?
+- Will people be allowed to view alerts they have have not subscribed to?
+- Will people be allowed to download images associated with an image event?
 
