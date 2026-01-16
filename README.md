@@ -77,13 +77,13 @@ There are two alternative applications for this. 1) a standalone Python GUI that
 
 The mock image pipeline is required to have completed successfully the last time it was run. This result means there are image, image event and image event alert files that the image event viewer can utilize.
 
-<u>Standalone Python GUI</u>
+**Standalone Python GUI**  
 
 Requires access to the tkinter and Pillow modules. From the image pipeline's main directory (where its *.py files are), run the following command:  
 
 $ python image_event_viewer.py  
 
-<u>Web Page</u>  
+**Web Page**  
 
 Set up the webpage container. The following command is in the image_event_viewer_webpage/ subdirectory of the image pipeline main application directory.  
 
