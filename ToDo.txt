@@ -6,4 +6,7 @@ To Do for mock pipeline
 - automate the process of building/running the Apache Kafka image/container and opening the command line
   windows for the python Kafka clients and running them
 - do tkinter stuff inside of container?
+- add logic to image event view webpage application that checks that
+  a proper entered image event alert positive integer number was actually used during
+  the preceding image pipeline run (i.e., not zero or too high )
 
