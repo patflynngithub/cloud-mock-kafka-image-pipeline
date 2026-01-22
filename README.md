@@ -1,4 +1,6 @@
-# Mock Image Pipeline Using Apache Kafka
+# Amazon Cloud Mock Image Pipeline Using Apache Kafka
+
+## *NOTE: This code repository, started as a copy of the mock-kafka-pipeline code repository, is currently being transitioned to fully working on the Amazon Cloud, that is, using the Cloud's database and storage options. The documentation below is not yet up to date.*
 
 ## <u>Description</u>
 
