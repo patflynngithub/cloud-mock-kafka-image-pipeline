@@ -54,11 +54,9 @@ Note: because the mock image pipeline does only one type of analysis
       key is stored in this table. In the future prototpe image pipeline,
       when multiple image analysis techniques are applied to an image and
       multiple image events could occur for this image, there will be
-      another table, image_event_derivative_images, that will have the
+      another table, image_event_derivative_images, that will contain the
+      the object keys for any stored image event derivative images.
     
-      
-      there 
-
 Schema:
 
 - image_event_number (automatically generated integer; primary key)
