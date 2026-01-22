@@ -1,0 +1,79 @@
+Cloud Mock Image Pipeline Relational Database Schema
+====================================================
+
+THIS DATABASE SCHEMA IS FOR THE CLOUD MOCK IMAGE PIPELINE. IT HAS FEWER TABLES THAN
+THE CLOUD PROTOTYPE IMAGE PIPELINE WILL HAVE (e.g., the prototype will also have
+at least the following additional tables: image_event_type, image_event_derivative_image,
+image_event_subscriber, image_event_subscription, image_event_alert_receiver)
+
+The first relational database implementation will be one relational database
+with multiple tables inside of it. If it turns out that we need more horizontal
+scalability (and it is worth the cons of doing so), we can change to having 
+multiple databases.
+
+--------------------------------------------------------------------------
+
+Relational Database: image_pipeline
+
+Relational Database Tables : image, image_event, image_event_alert
+
+-------------------------------------------------------------------------
+
+Normalization Check
+-------------------
+
+1NF: Yes, each column contains only atomic (indivisible) values, and each row is unique
+2NF: Yes, all non-key attributes are fully dependent on the entire primary key (no partial dependencies)
+3NF: Yes, there are no transitive dependencies (non-key attributes don't depend on other non-key attributes)
+
+--------------------------------------------------------------------------
+
+Table schema: image
+
+Description: stores the metadata of images received from the satellite telescope
+
+Note: the actual received images will be stored in a separate non-relational database 
+      (Amazon S3 object database)
+
+Schema:
+
+- image_number (automatically generated integer; primary key)
+- filename (string; foreign key; indexed)
+- image (Amazon S3 object key for the image)
+
+--------------------------------------------------------------------------
+
+Table schema: image_event
+
+Description: stores the metadata of a detected image event
+
+Note: because the mock image pipeline does only one type of analysis
+      on the received image at this point, in the event of an image 
+      event, when the analysis's generated difference image is saved
+      in an Amazon S3 object database, the difference image's object
+      key is stored in this table. In the future prototpe image pipeline,
+      when multiple image analysis techniques are applied to an image and
+      multiple image events could occur for this image, there will be
+      another table, image_event_derivative_images, that will have the
+    
+      
+      there 
+
+Schema:
+
+- image_event_number (automatically generated integer; primary key)
+- image_number (integer; foreign key; indexed)
+- difference_image (Amazon S3 object key for the difference image)
+
+--------------------------------------------------------------------------
+
+Table schema: image_event_alert
+
+Description: stores information about an image event alert that would have
+             been sent to an image event's subscribers
+
+Schema:
+
+- image_event_alert_number (automatically generated integer; primary key)
+- image_event_number (integer; foreign key; indexed)
+
