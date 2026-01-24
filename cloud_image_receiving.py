@@ -14,13 +14,22 @@ from constants.CONSTANTS import *
 import os
 import shutil
 
+# Pillow for image handling
 from PIL import Image
-    
+
+# Apache Kafka    
 from kafka import KafkaProducer
 import json
 
+# Amazon RDS MySQL database
 import mysql.connector
 from mysql.connector import Error
+
+# Amazon S3 object storage
+import boto3
+from datetime import datetime
+import logging
+from botocore.exceptions import ClientError
 
 # --------------------------------------------------------------------------------
 
@@ -60,7 +69,33 @@ def generate_image(image_num):
 
 # ------------------------------------------------------------------------
 
-def save_image_data(image_recv_path):
+def store_image(image_recv_path):
+
+    logging.basicConfig(level=logging.INFO)
+
+    # Boto3 automatically uses the IAM role attached to the EC2 instance
+    s3_client  = boto3.client('s3')
+
+    filename   = os.path.basename(image_recv_path)
+    bucket     = 'ngr-image-pipeline-bucket' # Replace with your S3 bucket name
+    image_key = f'image/{filename}'
+
+    try:
+        s3_client.upload_file(image_recv_path, bucket, image_key)
+        logging.info(f"'{filename}' successfully uploaded to '{bucket}/{image_key}'")
+
+    except ClientError as e:
+        logging.error(f"Failed to access S3: {e}")
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")
+        return False
+    finally:
+        s3_client.close()
+        return image_key
+
+# ------------------------------------------------------------------------
+
+def save_image(image_recv_path):
 
     filename = os.path.basename(image_recv_path)
 
@@ -69,6 +104,8 @@ def save_image_data(image_recv_path):
     DB_NAME     = "image_pipeline"
     DB_USER     = "admin"
     DB_PASSWORD = "nancygraceroman"
+
+    image_key = store_image(image_recv_path)
 
     try:
         connection = mysql.connector.connect(
@@ -85,9 +122,9 @@ def save_image_data(image_recv_path):
 
             cursor = connection.cursor()
 
-            print(f"Adding image {filename} to the image table")
+            print(f"Adding image filename {filename} and it's image key {image_key} to the image database table")
 
-            add_image = f"INSERT INTO image (filename) VALUES ('{filename}')"
+            add_image = f"INSERT INTO image (filename, image_key) VALUES ('{filename}', '{image_key}')"
             print(add_image)
             cursor.execute(add_image)
 
@@ -114,9 +151,8 @@ def receive_image(image_num, image_recv_path, prev_image_recv_path):
     image_db_path       = IMAGE_DB_DIR       + "/" + f"{image_num:05d}" + ".jpg"
     image_analysis_path = IMAGE_ANALYSIS_DIR + "/" + f"{image_num:05d}" + ".jpg"
 
-    # store received image in the image "database"
-    # shutil.copy(image_recv_path, image_db_path)
-    save_image_data(image_recv_path)
+    # store image metadata in database and image in object storage
+    save_image(image_recv_path)
 
     # copy received image to the image analysis directory
     # so that the image analysis client can analyze it

@@ -30,20 +30,26 @@ def create_pipeline_database(host, user, password):
 
             print()
 
+            cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
+
             # Create image table
+            drop_table_query = "DROP TABLE IF EXISTS image"
+            cursor.execute(drop_table_query) 
             create_table_query = """
-              CREATE TABLE IF NOT EXISTS image (
+              CREATE TABLE image (
               image_id  INT AUTO_INCREMENT PRIMARY KEY,
               filename  VARCHAR(255) NOT NULL UNIQUE,
               image_key VARCHAR(255) UNIQUE
             );
             """
             cursor.execute(create_table_query)
-            print("Table 'image' created successfully or already exists.")
+            print("Table 'image' created successfully")
 
             # Create image_event table
+            drop_table_query = "DROP TABLE IF EXISTS image_event"                 
+            cursor.execute(drop_table_query)
             create_table_query = """
-              CREATE TABLE IF NOT EXISTS image_event (
+              CREATE TABLE image_event (
               image_event_id       INT AUTO_INCREMENT PRIMARY KEY,
               image_id             INT NOT NULL,
               difference_image_key VARCHAR(255),
@@ -51,9 +57,11 @@ def create_pipeline_database(host, user, password):
             );
             """
             cursor.execute(create_table_query)
-            print("Table 'image_event' created successfully or already exists.")
+            print("Table 'image_event' created successfully")
 
             # Create image_event_alert table
+            drop_table_query = "DROP TABLE IF EXISTS image_event_alert"                 
+            cursor.execute(drop_table_query)
             create_table_query = """
               CREATE TABLE IF NOT EXISTS image_event_alert (
               image_event_alert_id  INT AUTO_INCREMENT PRIMARY KEY,
@@ -62,7 +70,7 @@ def create_pipeline_database(host, user, password):
             );
             """
             cursor.execute(create_table_query)
-            print("Table 'image_event_alert' created successfully or already exists.")
+            print("Table 'image_event_alert' created successfully")
 
             connection.commit()
 
