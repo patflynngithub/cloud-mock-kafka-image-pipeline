@@ -1,8 +1,17 @@
 import mysql.connector
 from mysql.connector import Error
 
+# RDS endpoint and database credentials
+DB_HOST     = "image-pipeline.cja6aao2uw8s.us-west-2.rds.amazonaws.com"
+DB_USER     = "admin"
+DB_PASSWORD = "nancygraceroman"
+
+# =====================================================================
+
 def create_pipeline_database(host, user, password):
+
     connection = None
+
     try:
         connection = mysql.connector.connect(
             host=host,
@@ -121,11 +130,8 @@ def create_pipeline_database(host, user, password):
             connection.close()
             print("MySQL connection is closed.")
 
-if __name__ == "__main__":
+# -------------------------------------------------------------------
 
-    # RDS endpoint and database credentials
-    DB_HOST     = "image-pipeline.cja6aao2uw8s.us-west-2.rds.amazonaws.com"
-    DB_USER     = "admin"
-    DB_PASSWORD = "nancygraceroman"
+if __name__ == "__main__":
 
     create_pipeline_database(DB_HOST, DB_USER, DB_PASSWORD)
