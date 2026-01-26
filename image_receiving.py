@@ -159,6 +159,7 @@ def save_image(image_filename, image_recv_path):
             connection.close()
             print("MySQL connection is closed.")
 
+    print (f"Upon save_image() return, image_id = {image_id}")
     return image_id
 
 # -----------------------------------------------------------------------------------

@@ -256,14 +256,12 @@ if __name__ == "__main__":
         else:
             image_event_id = retvals[1]
 
-            """
-            # Create and send an image event message to the Kafka image event alert client
+            # Send an image event message to the Kafka image event alert client
             message_data = {'image_event_id': image_event_id}
             producer.send(IMAGE_EVENT_ALERT_TOPIC, message_data)
             # Flush message to ensure delivery
             producer.flush()
 
             print(f"Sent image event ID # {image_event_id} message to the Kafka image event alert client")
-            """
             print()
 
