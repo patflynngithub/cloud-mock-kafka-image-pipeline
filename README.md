@@ -1,6 +1,6 @@
 # Amazon Cloud Mock Image Pipeline Using Apache Kafka
 
-## *NOTE: This code repository, started as a copy of the mock-kafka-pipeline code repository, is currently being transitioned to fully working on the Amazon Cloud, that is, using the Cloud's database and storage options. The documentation below is not yet up to date.*
+## ## *NOTE: this project is just a proof-of-concept of an Amazon Cloud-based image processing pipeline that utilizes Amazon Cloud's relational and object database services. This project was created quickly in order to get something that worked and so that I could move on to other tasks that would further prepare me for my Caltech IPAC job interview. Its code is, in some places clean, well-structured and well-organized, but mostly the code is not this. Please don't infer from this code my coding style and habits. I have a deadline of preparing for the interview. There are other items that are also important preparation for the interview.
 
 ## <u>Description</u>
 

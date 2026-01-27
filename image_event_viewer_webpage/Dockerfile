@@ -13,7 +13,9 @@ WORKDIR /usr/src/app
 USER root 
 RUN apt update && \
     apt -y install python3-pip && \
-    pip install Flask --break-system-packages
+    pip install Flask                  --break-system-packages && \ 
+    pip install mysql-connector-python --break-system-packages && \
+    pip install boto3                  --break-system-packages
 
 # Copy server-side python code contents into the container
 COPY app.py /usr/src/app
