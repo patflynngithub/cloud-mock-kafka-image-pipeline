@@ -13,98 +13,164 @@ skills.
 """
 
 import os
+from io import BytesIO
+import logging
 
-from flask import Flask, request, send_from_directory
+from flask import Flask, request, send_file
+
+# Amazon RDS MySQL database
+import mysql.connector
+from mysql.connector import Error
+
+# Amazon S3 object storage
+import boto3
+from botocore.exceptions import ClientError
+
+# =====================================================================
+
+# Web address for container that contains the Flask web server
+# WEB_SERVER_ADDRESS = "http://127.0.0.1:8000"
+WEB_SERVER_ADDRESS = "http://35.94.18.229:80"
+
+# Amazon RDS endpoint and database credentials
+
+DB_CONFIG = {
+    'host':     'image-pipeline.cja6aao2uw8s.us-west-2.rds.amazonaws.com',
+    'user':     'admin',
+    'password': 'nancygraceroman',
+    'database': 'image_pipeline'
+}
+
+# Amazon S3 bucket name
+BUCKET_NAME = 'ngr-image-pipeline-bucket'
+
+# =====================================================================
 
 app = Flask(__name__)
 
-# Absolute path to the image pipeline main directory inside the container
-# (via using the -v argument with the docker run command).
-# The images and the image event and image event alert info text files are in 
-# subdirectories of this directory.
-IMAGE_FOLDER = "/pipeline"
-
 # ----------------------------------------------------------------------------------
 
-def extract_path(a_string):
-
-    """ Extract the path from the string. """
-
-    start_wanted_path = a_string.find("/pipeline")
-    wanted_path = a_string[start_wanted_path:-1]
-
-    return wanted_path
-
-# -------------------------------------------------------------------------------------
-
-def get_image_paths(image_event_alert_path):
-
-    """ Use image event alert file to get image paths from image event file. """
-
-    image_path      = None
-    diff_image_path = None
-    prev_image_path = None
-
-    # Get image event file path from image event alert file
-    try:
-        with open(image_event_alert_path, 'r') as f:
-            lines = f.readlines()
-    
-        for line in lines:
-            line = line.strip()
-
-        image_event_path = extract_path(lines[1])
-
-    except FileNotFoundError:
-        print(f"Error: Image event alert file {image_event_alert_path}' was not found.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-    # Get image, previous image and difference image paths from image event file
-    try:
-        with open(image_event_path, 'r') as f:
-            lines = f.readlines()
-    
-        for line in lines:
-            line = line.strip()
-
-        image_path      = extract_path(lines[2])
-        prev_image_path = extract_path(lines[3])
-        diff_image_path = extract_path(lines[4])
-
-    except FileNotFoundError:
-        print(f"Error: The file '{image_event_path}' was not found.")
-    except Exception as e:
-        traceback.print_exc()
-        print(f"An error occurred: {e}")
-
-    return image_path, diff_image_path, prev_image_path
-
-# ----------------------------------------------------------------------------
-
-def get_image_event_imgs(alert_num_str):
+def get_stored_image(image_key):
     
     """
-    Using the image event alert number, the path to the image event alert info text file
-    is generated, which is used to get the image event image paths.
+    Retrieves the stored image into memory
     """
 
-    alert_num = int(alert_num_str)
-    image_event_alert_path = f"/pipeline/image_event_alerts/image_event_alert_{alert_num:03d}.txt"
-
-    image_path, diff_image_path, prev_image_path = get_image_paths(image_event_alert_path)
-
-    return image_path, diff_image_path, prev_image_path
+    s3_resource = boto3.resource('s3')    
+    image_file_stream = BytesIO()
+    s3_resource.Bucket(BUCKET_NAME).download_fileobj(image_key, image_file_stream)
+    # seek back to the beginning of the stream to make it readable
+    image_file_stream.seek(0)
+    
+    return image_file_stream
 
 # ----------------------------------------------------------------------------------------
 
-@app.route('/pipeline/<path:filename>')
-def serve_image(filename):
+@app.route('/image/<obj_key_suffix>')
+@app.route('/prev_image/<obj_key_suffix>')
+@app.route('/difference_image/<obj_key_suffix>')
+def serve_image(obj_key_suffix):
 
     """
-    Send webpage requested image to the web browser
+    Get webpage requested image from the object database ant send it to the web browser
     """
-    return send_from_directory(IMAGE_FOLDER, filename)
+
+    route_hardcoded_part = request.url_rule.rule.split('<')[0] # e.g., Returns "/user/" part of "/user/<username>/profile"
+    route_hardcoded_part = route_hardcoded_part.replace("'", "")
+
+
+    # print(f"Request URL: {request.url_rule.rule}")
+    # print(f"Route hardcoded part: {route_hardcoded_part}")
+    # print(f"Route hardcoded part: {repr(route_hardcoded_part)}")
+    # print(f"Route variable part: {obj_key_suffix}")
+
+    if route_hardcoded_part == "/image/":
+
+        object_key = "image/" + obj_key_suffix
+        download_name = "image.jpg"
+
+    elif route_hardcoded_part == "/prev_image/":
+
+        object_key = "image/" + obj_key_suffix 
+        download_name = "previous_image.jpg"
+
+    elif route_hardcoded_part == "/difference_image/":
+
+        object_key = "difference_image/" + obj_key_suffix 
+        download_name = "difference_image.jpg"
+
+    else:
+
+        print("Improper html <img> request URL from the webpage")
+        return None
+
+    image_in_memory = get_stored_image(object_key)
+
+    return send_file(image_in_memory,
+                     mimetype='image/jpeg',
+                     download_name=download_name)
+    
+# ----------------------------------------------------------------------------------------
+
+def get_image_event_image_keys(alert_num):
+
+    """
+    Retrieves from the relational database the object storage keys for the stored images
+    associated with the image event indicated by the image event alert number.
+    """
+
+    alert_num = int(alert_num)
+
+    image_id       = -1
+    image_key      = ""
+    image_event_id = -1
+    diff_image_key = ""
+
+    try:
+
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor()
+
+        image_keys_query = f"""
+        SELECT
+            i.image_id AS image_id,
+            i.image_key AS image_key,
+            e.image_event_id AS image_event_id,
+            e.difference_image_key AS difference_image_key
+        FROM
+            image_event_alert a
+        INNER JOIN
+            image_event e ON a.image_event_id = e.image_event_id
+        INNER JOIN
+            image i ON e.image_id = i.image_id
+        WHERE a.image_event_alert_id = '{alert_num}'
+        """
+
+        cursor.execute(image_keys_query)
+        results = cursor.fetchall()
+
+        # print(f"Image keys associated with image event alert # {alert_num}")
+        for row in results:
+            # print(row)
+            # print(f"Image ID: {row[0]}, Image key: {row[1]}, Image event ID: {row[2]}, Difference image key: {row[3]}")
+            image_id = row[0]
+            image_key = row[1]
+            image_event_id = row[2]
+            diff_image_key = row[3]
+
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+    finally:
+        if cursor:
+            cursor.close()
+        if conn and conn.is_connected():
+            conn.close()
+            print("Database connection closed.")    
+
+    prev_image_id  = image_id -1 
+    prev_image_key = f"image/image_{prev_image_id:05d}.jpg"
+
+    return image_key, diff_image_key, prev_image_key
 
 # ----------------------------------------------------------------------------------------
 
@@ -119,7 +185,7 @@ def display_page():
     input alert number.
     """
 
-    # note extra empty line to end the headers
+    # note extra empty line to end the header
     webpage = "<!DOCTYPE html>\n\n"
 
     # Collect the HTML content
@@ -128,13 +194,13 @@ def display_page():
     webpage += "<head><title>Image Event Viewer</title></head>\n"
     webpage += "<body>\n"
 
-    webpage += '<h2 style="text-align:center;">Enter an image event alert number</h2>\n'
-    webpage += '<h5 style="text-align:center;">(positive integer)</h5>\n'
-    webpage += '<form style="text-align:center;" action="http://127.0.0.1:8000">\n'
-    webpage += '   <label for="alert_num">Alert number:</label><br>\n'
-    webpage += '   <input type="text" id="alert_num" name="alert_num"><br>\n'
-    webpage += '   <input type="submit" value="Submit">\n'
-    webpage += '</form>\n\n'
+    webpage +=  '<h2 style="text-align:center;">Enter an image event alert number</h2>\n'
+    webpage +=  '<h5 style="text-align:center;">(positive integer)</h5>\n'
+    webpage += f'<form style="text-align:center;" action="{WEB_SERVER_ADDRESS}">\n'
+    webpage +=  '   <label for="alert_num">Alert number:</label><br>\n'
+    webpage +=  '   <input type="text" id="alert_num" name="alert_num"><br>\n'
+    webpage +=  '   <input type="submit" value="Submit">\n'
+    webpage +=  '</form>\n\n'
 
     alert_num = request.args.get('alert_num','')
     if alert_num:
@@ -146,22 +212,23 @@ def display_page():
             # Display the images of the image event
 
             webpage += f'<p style="text-align:center;">Alert number: {alert_num}</p>\n'
-            image_path, diff_image_path, prev_image_path = get_image_event_imgs(alert_num)
+
+            image_key, diff_image_key, prev_image_key = get_image_event_image_keys(alert_num)
 
             webpage  +=  '<div style="display: flex; justify-content: center; gap: 20px;" class="image_and_prev_image">\n'
             webpage  +=  "<figure>\n"
-            webpage  += f'  <img src="{prev_image_path}"" style="width: auto; height: auto; max-width: 100%;">\n'
+            webpage  += f'  <img src="/{image_key}" style="width: auto; height: auto; max-width: 100%;">\n'
             webpage  +=  "  <figcaption>Previous Image</figcaption>\n"
             webpage  +=  "</figure>\n"
             webpage  +=  "<figure>\n"
-            webpage  += f'  <img src="{image_path}"" style="width: auto; height: auto; max-width: 100%;">\n'
+            webpage  += f'  <img src="/{prev_image_key}" style="width: auto; height: auto; max-width: 100%;">\n'
             webpage  +=  "  <figcaption>Image</figcaption>\n"
             webpage  +=  "</figure>\n"
             webpage  +=  '</div>\n'
 
             webpage  +=  '<div style="display: flex; justify-content: center; gap: 20px;" class="diff_image">\n'
             webpage  +=  "<figure>\n"
-            webpage  += f'  <img src="{diff_image_path}"" style="width: auto; height: auto; max-width: 100%;">\n'
+            webpage  += f'  <img src="/{diff_image_key}" style="width: auto; height: auto; max-width: 100%;">\n'
             webpage  +=  "  <figcaption>Difference Image</figcaption>\n"
             webpage  +=  "</figure>\n"
             webpage  +=  '</div>\n'
@@ -174,5 +241,6 @@ def display_page():
 # ==================================================================
 
 if __name__ == '__main__':
+
     app.run(host="0.0.0.0", port=8000, debug=True)
 

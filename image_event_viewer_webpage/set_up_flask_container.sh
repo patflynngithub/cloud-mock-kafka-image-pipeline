@@ -11,5 +11,5 @@ docker build --progress=plain -t python-flask-server_image .
 # the .. in the -v argument below references the image pipeline's main application directory;
 # allows the Flask application in the container to access the data file results of the most 
 # recent image pipeline run
-docker run -v ..:/pipeline -p 8000:8000 --name python-flask-server_container python-flask-server_image
+docker run -v ..:/pipeline -p 80:8000 --name python-flask-server_container python-flask-server_image
 

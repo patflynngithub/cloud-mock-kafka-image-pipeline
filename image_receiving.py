@@ -91,7 +91,7 @@ def store_image(image_filename, image_recv_path):
     # Boto3 automatically uses the IAM role attached to the EC2 instance
     s3_client  = boto3.client('s3')
 
-    image_key      = f'image/{image_filename}'
+    image_key = f'image/{image_filename}'
 
     try:
         s3_client.upload_file(image_recv_path, BUCKET_NAME, image_key)
