@@ -79,7 +79,8 @@ Note: that the *docker run* *--rm* argument causes the container to be automatic
 Open a new command-line window and *ssh* to the EC2 computing instance. Enter the following commands:  
 
 $ docker exec -it pipeline_container /bin/bash  
-     (you will automatically be put in the  /pipeline directory of the container)  
+(you will automatically be put in the  /pipeline directory of the container)  
+
 $ python3 image_event_alert.py
 
 #### Enter the Apache Kafka container and run the Kafka image analysis client
@@ -87,14 +88,16 @@ $ python3 image_event_alert.py
 Open a new command-line window and *ssh* to the EC2 computing instance. Enter the following commands:  
 
 $ docker exec -it pipeline_container /bin/bash  
-     (you will automatically be put in the  /pipeline directory of the container)  
+(you will automatically be put in the  /pipeline directory of the container)  
+
 $ python3 image_analysis.py
 
-### Enter the Apache Kafka container and run the image receiving Kafka client
+#### Enter the Apache Kafka container and run the image receiving Kafka client
 Open a new command-line window and *ssh* to the EC2 computing instance. Enter the following commands:  
 
-$ docker exec -it pipeline_container /bin/bash  
-     (you will automatically be put in the /pipeline directory of the container)  
+$ docker exec -it pipeline_container /bin/bash
+(you will automatically be put in the /pipeline directory of the container)  
+
 $ python3 image_receiving.py
 
 
