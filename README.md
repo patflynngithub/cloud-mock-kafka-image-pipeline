@@ -117,7 +117,7 @@ The mock image pipeline is required to have completed successfully the last time
 
 **Python Flask Web Server for Webpages**
 
-Set up the Python Flask container that will run automatically run Flask's development web server. The following command, which builds the docker image and creates/runs the docker container, is in the *image_event_viewer_webpage/* subdirectory of the image pipeline main application directory.  
+Set up the Python Flask container that will automatically run Flask's development web server. The following command, which builds the docker image and creates/runs the docker container, is in the *image_event_viewer_webpage/* subdirectory of the image pipeline main application directory.  Change to this directory.
 
 $ ./set_up_flask_container.sh  
 
