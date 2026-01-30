@@ -1,19 +1,20 @@
 """
-IMAGE EVENT ALERT: Receives an image event alert message from the Kafka image analysis
- (Kafka client)    client, saves the image event alert info in the relational database,
-                   (not implemented yet) and sends an image event alert to those who
-                   have subscribed to the image event.
+IMAGE EVENT ALERT Kafka client: Receives an image event alert message from the Kafka image analysis
+                                client, saves a new image event alert into the relational database,
+                                and (not implemented yet) sends an image event alert to those who
+                                have subscribed to the type of image event that has occurred.
 """
 
 from constants.CONSTANTS import *
 
 import os
-import numpy as np
-
-from PIL import Image
+import sys
+import logging
+import traceback
 
 # Apache Kafka
 from kafka import KafkaConsumer
+from kafka.errors import NoBrokersAvailable, OffsetOutOfRangeError
 import json
 
 # Amazon RDS MySQL database
@@ -28,28 +29,47 @@ DB_NAME     = "image_pipeline"
 DB_USER     = "admin"
 DB_PASSWORD = "nancygraceroman"
 
-# -------------------------------------------------------------------------------------------------
+# ===================================================================================================
 
 if __name__ == "__main__":
 
-    # Create a Kafka Consumer instance for receiving messages from the 
-    # image analysis client
-    consumer_topic = IMAGE_EVENT_ALERT_TOPIC
-    consumer = KafkaConsumer(
-        consumer_topic,
-        group_id='image_event_alert_group',
-        bootstrap_servers=['localhost:9092'],
-        auto_offset_reset='earliest',
-        enable_auto_commit=True,
-        value_deserializer=lambda v: json.loads(v.decode('utf-8'))
+    logging.basicConfig(
+        level=logging.WARNING,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler("image_event_alert_client.log", mode='w')
+        ]
     )
 
+    consumer = None
+    try:
+
+        # Create a Kafka consumer instance for receiving messages from the 
+        # image analysis client
+        consumer_topic = IMAGE_EVENT_ALERT_TOPIC
+        consumer = KafkaConsumer(
+            consumer_topic,
+            client_id          = 'image event alert client',
+            group_id           = 'image_event_alert_group',
+            bootstrap_servers  = ['localhost:9092'],
+            auto_offset_reset  = 'earliest',
+            enable_auto_commit = True,
+            value_deserializer = lambda v: json.loads(v.decode('utf-8'))
+        )
+
+    except (OffsetOutOfRangeError, NoBrokersAvailable, Exception) as error:
+        logging.exception("KafkaConsumer initializer exception")
+        exit_msg = "KafkaConsumer initialization ERROR: exiting Kafka image event alert client"
+        logging.error(exit_msg)
+        # passing a string to sys.exit() will always result in an exit code of 1 (failure)
+        sys.exit(exit_msg)
+
     print()
-    print("Starting image event alert Kafka client")
+    print("Started image event alert Kafka client")
     print("CODE_DIR = " + CODE_DIR)
     print()
 
-    # Receive and handle Kafka messages from the image analysis Kafka client
+    # Receive and handle Kafka messages from the Kafka image analysis client
     for message in consumer:
 
         print(f"Received message: Topic={message.topic}, Value={message.value}")
@@ -57,7 +77,7 @@ if __name__ == "__main__":
         image_event_id = message.value["image_event_id"]
         print(f"Image event ID = {image_event_id}")
 
-        # Add image event alert to relational database
+        # Add a new image event alert to the relational database
         try:
             connection = mysql.connector.connect(
                 host     = DB_HOST,
@@ -70,10 +90,9 @@ if __name__ == "__main__":
 
                 db_info = connection.server_info
                 print(f"Connected to MySQL Server version {db_info}")
-
                 cursor = connection.cursor()
 
-                # Add an image event alert to image alert event database table
+                # Add new image event alert to the image event alert relational database table
 
                 print(f"Adding new image event alert to the image event alert database table")
                 add_image_event_alert_query = f"INSERT INTO image_event_alert (image_event_id) VALUES ('{image_event_id}')"
@@ -81,8 +100,9 @@ if __name__ == "__main__":
                 cursor.execute(add_image_event_alert_query)
                 connection.commit()
 
-                # this is the integer just automatically generated for the new row's
-                # image_event_alert_id column in the image event alert table
+                # get the image event alert ID integer just now automatically
+                # generated when adding the new image event alert to the image event
+                # alert database table.
                 image_event_alert_id = cursor.lastrowid
                 print(f"New image event alert ID = {image_event_alert_id}")
                 print()
@@ -98,5 +118,4 @@ if __name__ == "__main__":
 
         # HERE, EMAIL ALERTS WOULD BE SENT TO THOSE WHO HAVE SUBSCRIBED TO BE
         # ALERTED ABOUT THIS TYPE OF IMAGE EVENT
-
 

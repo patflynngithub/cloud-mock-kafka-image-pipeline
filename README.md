@@ -1,14 +1,16 @@
-
-
 # Amazon Cloud Mock Image Pipeline Using Apache Kafka
 
+### NOTE: this project is just a proof-of-concept image processing pipeline that runs on the Amazon Cloud and utilizes Amazon Cloud's RDS MySQL relational database and S3 object database services. This project was created very quickly in order to get something that worked and so that I could move on to other tasks that would further prepare me for my first Caltech IPAC job interview. Its code is, in a few places, clean,  well-structured, well-organized and well-architected, but mostly the code is not this. The error checking is very incomplete. Its configuration, both external of and internal to the code, is decidedly very manual (e.g., Amazon Cloud network and access settings in the code and its build and configuration commands/scripts). Please don't infer from this code about my coding skills, style, habits and software engineering skills. It will all be cleaned up on a future date.
+
+### NOTE:  To heighten my Python logging sophistication, I did a lot of trial and error on the first 65 lines of *image_event_alert.py* (because it's the simplest of the three Kafka python clients) to achieve a more nuanced understanding of the logging feature. To get both the console output and the log file contents the way I wanted them to look (not the same look), I tried two different approaches: 1) logging the same output to both the console and a log file, and 2) logging just to a log file and printing (print()) to the console. I finished for now at the second solution because it got me the results that I wanted. In the future, when I further investigate Python logging, I will likely find a more sophisticated way of getting the desired outputs with just logging. I need to move on for now to do other tasks to prepare for my first round interview with Caltech.
 
 
-## ## *NOTE: this project is just a proof-of-concept image processing pipeline that runs on the Amazon Cloud and utilizes Amazon Cloud's RDS MySQL relational database and S3 object database services. This project was created very quickly in order to get something that worked and so that I could move on to other tasks that would further prepare me for my first Caltech IPAC job interview. Its code is, in a few places, clean,  well-structured, well-organized and well-architected, but mostly the code is not this. The error checking is very incomplete. Its configuration, both external of and internal to the code, is decidedly very manual (e.g., Amazon Cloud network and access settings in the code and its build and configuration commands/scripts). Please don't infer from this code about my coding skills, style, habits and software engineering skills. It will all be cleaned up on a future date.
+
+-----------------------------------------------------------------------
 
 
 
-### Description
+#### Description
 
 This is a mock image processing pipeline using Apache Kafka. It runs on the Amazon Cloud, using this cloud's RDS MySQL relational database and S3 object database services. The pipeline has Kafka python clients doing the different stages of image processing work. It is adapted from the original local Linux PC-based mock image pipeline that didn't use any Amazon Cloud resources.
 
@@ -43,11 +45,7 @@ The three Kafka python clients and *image_event_viewer_webpage/app.py* have host
 
 Before each of the setup/execution sections below, you will need a new ssh session into the Amazon EC2 computing instance. You do this from a local PC. For each ssh session, you will open up a new terminal window. This will allow you to view the separate text outputs of the Apache Kafka broker ("server") and its three pipeline clients when executing. You will need your own Amazon EC2 computing instance public/private key pair (public key stored in local *.pem* file; don't lose it!) and the instance's public DNS (or public IPv4 address). The below suggested command assumes that you have placed the mock image pipeline application (including all of its subirectories) in the instance's *~/cloud-mock-image-pipeline* subdirectory.
 
-$ ssh -i /home/patrick/Desktop/holding/caltech/MockImagePipeline.pem ubuntu@ec2-35-94-18-229.us-west-2.compute.amazonaws.com -t "cd ~/cloud-mock-image-pipeline; exec $SHELL -i"
-
------------------------------------------------------------------------
-
-If this is the first time you are running the cloud mock image pipeline on your Amazon EC2 computing instance, you will need to create the Amazon RDS MySQL database using a python command-line utility that I created. This utility can be run from inside or outside the Apache Kafka container. Running it outside of the container on the EC2 computing instance's command-line may require you to install the Python MySQL connector (*pip install mysql-connector-python*). You may also need to change the host, user, and password settings inside the script.
+$ ssh -i /home/patrick/Desktop/holding/caltech/MockImagePipeline.pem ubuntu@ec2-35-94-18-229.us-west-2.compute.amazonaws.com -t "cd ~/cloud-mock-image-pipeline; exec $SHELL -i" the cloud mock image pipeline on your Amazon EC2 computing instance, you will need to create the Amazon RDS MySQL database using a python command-line utility that I created. This utility can be run from inside or outside the Apache Kafka container. Running it outside of the container on the EC2 computing instance's command-line may require you to install the Python MySQL connector (*pip install mysql-connector-python*). You may also need to change the host, user, and password settings inside the script.
 
 Enter the following command:
 
@@ -93,6 +91,7 @@ $ docker exec -it pipeline_container /bin/bash
 $ python3 image_analysis.py
 
 #### Enter the Apache Kafka container and run the image receiving Kafka client
+
 Open a new command-line window and *ssh* to the EC2 computing instance. Enter the following commands:  
 
 $ docker exec -it pipeline_container /bin/bash
