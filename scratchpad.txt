@@ -1,4 +1,3 @@
-
 So far, unsuccessfully trying to get Python GUI to work within image pipeline container
 ---------------------------------------------------------------------------------------
 

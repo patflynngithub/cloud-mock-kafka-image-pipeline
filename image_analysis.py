@@ -5,42 +5,34 @@ IMAGE ANALYSIS:  receives Apache Kafka messages from the image receiving client,
                  event alerting client
 """
 
-from constants.CONSTANTS import *
+from CONSTANTS import *
+from CLOUD_INFO import *
 
 import os
-import numpy as np
 from io import BytesIO
+from datetime import datetime
+import logging
+import json
+
+# Numpy for doing math operations on the images
+import numpy as np
 
 # Pillow for handling images
 from PIL import Image
 
-# Apache Kafka
+# Apache Kafka for image stream message handling
 from kafka import KafkaProducer
 from kafka import KafkaConsumer
-import json
 
-# Amazon RDS MySQL database
+# Amazon RDS MySQL database for storing image metadata
 import mysql.connector
 from mysql.connector import Error
 
-# Amazon S3 object storage
+# Amazon S3 object storage for storing the images themselves
 import boto3
-from datetime import datetime
-import logging
 from botocore.exceptions import ClientError
 
 # =====================================================================
-
-# RDS endpoint and database credentials
-DB_HOST     = "image-pipeline.cja6aao2uw8s.us-west-2.rds.amazonaws.com"
-DB_NAME     = "image_pipeline"
-DB_USER     = "admin"
-DB_PASSWORD = "nancygraceroman"
-
-# Amazon S3 bucket name
-BUCKET_NAME = 'ngr-image-pipeline-bucket'
-
-# --------------------------------------------------------------------------------
 
 def analyze_images(image_num, image_id, image_filename, image_analysis_path):
 

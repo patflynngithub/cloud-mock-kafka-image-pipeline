@@ -12,6 +12,11 @@ dynamic webpages so that I can renew and extend my basic front-end
 skills.
 """
 
+from CONSTANTS import *
+from CLOUD_INFO import *
+
+from get_public_ipv4 import *
+
 import os
 from io import BytesIO
 import logging
@@ -29,8 +34,7 @@ from botocore.exceptions import ClientError
 # =====================================================================
 
 # Web address for container that contains the Flask web server
-# WEB_SERVER_ADDRESS = "http://127.0.0.1:8000"
-WEB_SERVER_ADDRESS = "http://35.94.18.229:80"
+WEB_SERVER_ADDRESS = "http://" + get_public_ipv4()
 
 # Amazon RDS endpoint and database credentials
 
@@ -217,11 +221,11 @@ def display_page():
 
             webpage  +=  '<div style="display: flex; justify-content: center; gap: 20px;" class="image_and_prev_image">\n'
             webpage  +=  "<figure>\n"
-            webpage  += f'  <img src="/{image_key}" style="width: auto; height: auto; max-width: 100%;">\n'
+            webpage  += f'  <img src="/{prev_image_key}" style="width: auto; height: auto; max-width: 100%;">\n'
             webpage  +=  "  <figcaption>Previous Image</figcaption>\n"
             webpage  +=  "</figure>\n"
             webpage  +=  "<figure>\n"
-            webpage  += f'  <img src="/{prev_image_key}" style="width: auto; height: auto; max-width: 100%;">\n'
+            webpage  += f'  <img src="/{image_key}" style="width: auto; height: auto; max-width: 100%;">\n'
             webpage  +=  "  <figcaption>Image</figcaption>\n"
             webpage  +=  "</figure>\n"
             webpage  +=  '</div>\n'

@@ -5,29 +5,22 @@ IMAGE EVENT ALERT Kafka client: Receives an image event alert message from the K
                                 have subscribed to the type of image event that has occurred.
 """
 
-from constants.CONSTANTS import *
+from CONSTANTS import *
+from CLOUD_INFO import *
 
 import os
 import sys
 import logging
 import traceback
-
-# Apache Kafka
-from kafka import KafkaConsumer
-from kafka.errors import NoBrokersAvailable, OffsetOutOfRangeError
 import json
 
-# Amazon RDS MySQL database
+# Apache Kafka for image stream message handling
+from kafka import KafkaConsumer
+from kafka.errors import NoBrokersAvailable, OffsetOutOfRangeError
+
+# Amazon RDS MySQL database for storing image metadata and events
 import mysql.connector
 from mysql.connector import Error
-
-# ===================================================================================================
-
-# RDS endpoint and database credentials
-DB_HOST     = "image-pipeline.cja6aao2uw8s.us-west-2.rds.amazonaws.com"
-DB_NAME     = "image_pipeline"
-DB_USER     = "admin"
-DB_PASSWORD = "nancygraceroman"
 
 # ===================================================================================================
 
