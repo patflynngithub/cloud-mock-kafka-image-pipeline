@@ -15,7 +15,7 @@ multiple databases.
 
 Relational Database: image_pipeline
 
-Relational Database Tables : image, image_event, image_event_alert
+Relational Database Tables : image_metadata, image_event, image_event_alert
 
 -------------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ Normalization Check
 
 --------------------------------------------------------------------------
 
-Table schema: image
+Table schema: image_metadata
 
 Description: stores the metadata of images received from the satellite telescope
 
@@ -38,8 +38,8 @@ Note: the actual received images will be stored in a separate non-relational dat
 Schema:
 
 - image_id (automatically generated integer; primary key)
-- filename (string; foreign key; indexed)
-- image_key (Amazon S3 object key for the image)
+- image_filename (string; indexed)
+- image_storage_key (string; Amazon S3 object key for the image)
 
 --------------------------------------------------------------------------
 
@@ -60,8 +60,8 @@ Note: because the mock image pipeline does only one type of analysis
 Schema:
 
 - image_event_id (automatically generated integer; primary key)
-- image_id (integer; foreign key; indexed)
-- difference_image_key (Amazon S3 object key for the difference image)
+- image_id (integer; foreign key (image_metadata table); indexed)
+- difference_image_object_key (Amazon S3 object key for the difference image)
 
 --------------------------------------------------------------------------
 
@@ -73,5 +73,5 @@ Description: stores information about an image event alert that would have
 Schema:
 
 - image_event_alert_id (automatically generated integer; primary key)
-- image_event_id (integer; foreign key; indexed)
+- image_event_id (integer; foreign key (image_event table); indexed)
 

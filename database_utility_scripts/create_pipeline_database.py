@@ -1,87 +1,119 @@
+"""
+This database utility creates the relational database for the mock image pipeline.
+It can also be used when the database already exists; in this case, it will only
+drop the tables (THEREBY DELETING ALL DATA IN THE TABLES) and recreate them empty.
+
+Execution:
+    $ python3 database_utility_scripts/create_pipeline_database.py
+    or
+    $ cd database_utility_scripts
+    $ python3 create_pipeline_database.py
+"""
+
 import mysql.connector
 from mysql.connector import Error
 
+import sys
+
+# Allows this utility to access the main application's CLOUD_INFO
+# module when the utility is executed from one of two places: 
+# 1) the main application directory, or
+# 2) the subdirectory that the utility is in
+sys.path.append("./CLOUD_INFO")   # add to module search path
+sys.path.append("../CLOUD_INFO")  # add to module search path
+
 # RDS endpoint and database credentials
-DB_HOST     = "image-pipeline.cja6aao2uw8s.us-west-2.rds.amazonaws.com"
-DB_USER     = "admin"
-DB_PASSWORD = "nancygraceroman"
+from CLOUD_INFO import DB_HOST, DB_USER, DB_PASSWORD
 
 # =====================================================================
 
 def create_pipeline_database(host, user, password):
+    """
+    Creates the image pipeline database if it doesn't yet exist and
+    creates its table (dropping and recreating them if they already exist).
+    """
 
-    connection = None
-
+    rdb_connection = None
+    cursor         = None
     try:
-        connection = mysql.connector.connect(
+        rdb_connection = mysql.connector.connect(
             host=host,
             user=user,
             password=password
         )
 
-        if connection.is_connected():
+        if rdb_connection.is_connected():
 
-            db_info = connection.server_info
-            print(f"Connected to MySQL Server version {db_info}")
+            rdb_info = rdb_connection.server_info
+            cursor   = rdb_connection.cursor()
+            print(f"Connected to MySQL Server version {rdb_info}")
 
-            cursor = connection.cursor()
-
-            print("Creating image_pipeline database if it does not exist")
-            create_database = "CREATE DATABASE IF NOT EXISTS image_pipeline"
+            # Create database itself if it doesn't already exist
+            database_name = "image_pipeline"
+            print(f"Creating {database_name} database if it does not exist")
+            create_database = f"CREATE DATABASE IF NOT EXISTS {database_name}"
             cursor.execute(create_database)
 
-            print("\nDatabases on the server:")
+            # Show existing databases associated with this EC2 instance
+            print("\nDatabases associated with this EC2 instance:")
             cursor.execute("SHOW DATABASES")
             for db in cursor:
                 print(db)
 
-            cursor.execute("USE image_pipeline")
+            # use image_pipeline database
+            cursor.execute(f"USE {database_name}")
 
             print()
 
+            # disables foreign key checks so can drop tables
             cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
 
-            # Create image table
-            drop_table_query = "DROP TABLE IF EXISTS image"
+            # Create image metadata table (anew if already exists)
+            table_name = "image_metadata"
+            drop_table_query = f"DROP TABLE IF EXISTS {table_name}"
             cursor.execute(drop_table_query) 
-            create_table_query = """
-              CREATE TABLE image (
-              image_id  INT AUTO_INCREMENT PRIMARY KEY,
-              filename  VARCHAR(255) NOT NULL UNIQUE,
-              image_key VARCHAR(255) UNIQUE
+            create_table_query = f"""
+              CREATE TABLE {table_name} (
+              image_id          INT AUTO_INCREMENT PRIMARY KEY,
+              image_filename    VARCHAR(255) NOT NULL UNIQUE,
+              image_storage_key VARCHAR(255) UNIQUE
             );
             """
             cursor.execute(create_table_query)
-            print("Table 'image' created successfully")
+            print(f"Table '{table_name}' created successfully")
 
-            # Create image_event table
-            drop_table_query = "DROP TABLE IF EXISTS image_event"                 
+            # Create image event table (anew if already exists)
+            foreign_key_table_name = table_name
+            table_name = "image_event"
+            drop_table_query = f"DROP TABLE IF EXISTS {table_name}"                 
             cursor.execute(drop_table_query)
-            create_table_query = """
-              CREATE TABLE image_event (
-              image_event_id       INT AUTO_INCREMENT PRIMARY KEY,
-              image_id             INT NOT NULL,
-              difference_image_key VARCHAR(255),
-              FOREIGN KEY (image_id) REFERENCES image(image_id)
+            create_table_query = f"""
+              CREATE TABLE {table_name} (
+              image_event_id              INT AUTO_INCREMENT PRIMARY KEY,
+              image_id                    INT NOT NULL,
+              difference_image_object_key VARCHAR(255),
+              FOREIGN KEY (image_id) REFERENCES {foreign_key_table_name}(image_id)
             );
             """
             cursor.execute(create_table_query)
-            print("Table 'image_event' created successfully")
+            print(f"Table '{table_name}' created successfully")
 
-            # Create image_event_alert table
-            drop_table_query = "DROP TABLE IF EXISTS image_event_alert"                 
+            # Create image event alert table (anew if already exists)
+            foreign_key_table_name = table_name
+            table_name = "image_event_alert"
+            drop_table_query = f"DROP TABLE IF EXISTS {table_name}"                 
             cursor.execute(drop_table_query)
-            create_table_query = """
-              CREATE TABLE IF NOT EXISTS image_event_alert (
+            create_table_query = f"""
+              CREATE TABLE IF NOT EXISTS {table_name} (
               image_event_alert_id  INT AUTO_INCREMENT PRIMARY KEY,
               image_event_id        INT NOT NULL UNIQUE,
-              FOREIGN KEY (image_event_id) REFERENCES image_event(image_event_id)
+              FOREIGN KEY (image_event_id) REFERENCES {foreign_key_table_name}(image_event_id)
             );
             """
             cursor.execute(create_table_query)
-            print("Table 'image_event_alert' created successfully")
+            print(f"Table '{table_name}' created successfully")
 
-            connection.commit()
+            rdb_connection.commit()
 
             # Show database's tables
             query = "SHOW TABLES"
@@ -125,9 +157,9 @@ def create_pipeline_database(host, user, password):
         print(f"Error connecting to MySQL database: {e}")
 
     finally:
-        if connection is not None and connection.is_connected():
+        if rdb_connection is not None and rdb_connection.is_connected():
             cursor.close()
-            connection.close()
+            rdb_connection.close()
             print("MySQL connection is closed.")
 
 # -------------------------------------------------------------------
@@ -135,3 +167,4 @@ def create_pipeline_database(host, user, password):
 if __name__ == "__main__":
 
     create_pipeline_database(DB_HOST, DB_USER, DB_PASSWORD)
+

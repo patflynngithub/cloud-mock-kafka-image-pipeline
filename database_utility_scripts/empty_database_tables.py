@@ -1,11 +1,12 @@
 """
-This database utility shows the contents of the database tables.
+This database utility truncates (empties) the relational database tables for the
+mock image pipeline.
 
 Execution:
-    $ python3 database_utility_scripts/show_database_contents.py
+    $ python3 database_utility_scripts/empty_database_tables.py
     or
     $ cd database_utility_scripts
-    $ python3 show_database_contents.py
+    $ python3 empty_database_tables.py
 """
 
 import mysql.connector
@@ -25,18 +26,18 @@ from CLOUD_INFO import DB_HOST, DB_NAME, DB_USER, DB_PASSWORD
 
 # =====================================================================
 
-def show_database_contents(host, database, user, password):
+def empty_database_tables(host, database, user, password):
     """
-    Shows the contents of the database tables.    
+    Empties the image pipeline's database tables.
     """
 
     rdb_connection = None
     try:
         rdb_connection = mysql.connector.connect(
-            host     = host,
-            database = database,
-            user     = user,
-            password = password
+            host=host,
+            database=database,
+            user=user,
+            password=password
         )
 
         if rdb_connection.is_connected():
@@ -46,18 +47,16 @@ def show_database_contents(host, database, user, password):
 
             cursor = rdb_connection.cursor()
 
-            print(f"Showing '{database}' database table contents\n")
+            cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
+            print("Foreign key checks are temporarily disabled for truncating tables")
 
-            table_names = ['image_metadata', 'image_event', 'image_event_alert']
+            print(f"Emptying the '{database}' database tables ...")
+            cursor.execute(f"USE {database}")
+
+            table_names = ["image_metadata", "image_event", "image_event_alert"]
             for table_name in table_names:
-                select_query = f"SELECT * FROM {table_name}"
-                cursor.execute(select_query)
-                result = cursor.fetchall()
-
-                print(f"\nContents of table '{table_name}':")
-                for row in result:
-                    print(row)
-            print()
+                print(f"Emptying table '{table_name}'")
+                cursor.execute(f"TRUNCATE TABLE {table_name}")
 
             rdb_connection.commit()
 
@@ -70,9 +69,9 @@ def show_database_contents(host, database, user, password):
             rdb_connection.close()
             print("MySQL connection is closed.")
 
-# -------------------------------------------------------------------
+# --------------------------------------------------------------------------
 
 if __name__ == "__main__":
 
-    show_database_contents(DB_HOST, DB_NAME, DB_USER, DB_PASSWORD)
+    empty_database_tables(DB_HOST, DB_NAME, DB_USER, DB_PASSWORD)
 
