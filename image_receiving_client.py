@@ -16,16 +16,9 @@ IMAGE RECEIVING:  This Kafka python client receives images from outside Apache K
 
 # =====================================================================
 
-from CONSTANTS import *
-
-# relational database and object storage access info
-from CLOUD_INFO import *
-
 import os
 import sys
 import shutil
-from datetime import datetime
-import logging
 import json
 
 # Pillow for image handling
@@ -41,6 +34,11 @@ from mysql.connector import Error
 # Amazon S3 object storage for storing the images themselves
 import boto3
 from botocore.exceptions import ClientError
+
+from CONSTANTS.CONSTANTS import *
+
+# relational database and object storage access info
+from CLOUD_INFO.CLOUD_INFO import DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, BUCKET_NAME
 
 # =====================================================================
 
@@ -114,7 +112,7 @@ def store_image_metadata(image_filename, image_recv_path, image_storage_key):
         add_image_metadata_query = f"INSERT INTO image_metadata (image_filename, image_storage_key) VALUES ('{image_filename}', '{image_storage_key}')"
         print(add_image_metadata_query)
         cursor.execute(add_image_metadata_query)
-        connection.commit()
+        rdb_connection.commit()
 
         # retrieve the integer just automatically generated for the new row's
         # primary key image_id column in the image metadata table
@@ -193,7 +191,7 @@ if __name__ == "__main__":
     )
 
     cursor = None
-    if rdb_connection.connected:
+    if rdb_connection.is_connected():
 
         rdb_info = rdb_connection.server_info
         print(f"Connected to the relational database: {rdb_info}")
@@ -239,7 +237,7 @@ if __name__ == "__main__":
 
     # --------------------------------------------------
 
-    if object_storage_client is not NONE:
+    if object_storage_client is not None:
         object_storage_client.close()
         print("Object storage client is closed")
 
