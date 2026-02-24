@@ -52,13 +52,18 @@ def analyze_image(image_num, image_id, image_filename, image_analysis_path):
     prev_image_num           = image_num - 1
     prev_image_analysis_path = IMAGE_ANALYSIS_DIR + "/" + f"image_{prev_image_num:05d}.jpg"
 
+    print(f"image_analysis_path = {image_analysis_path}")
+    print(f"prev_image_analysis_path = {prev_image_analysis_path}")
+
+    # For troubleshooting
+    # print("Contents of the directory:")
+    # contents = os.listdir("./image_analysis")
+    # for item in contents:
+    #    print(item)
+
     # Open current and previous images and convert them to NumPy arrays (ensure the same dimensions and type)
     # note: these arrays will be float RGB (m x n x 3)
-    print(f"image_analysis_path = {image_analysis_path}")
-    print("Contents of the directory:")
-    contents = os.listdir("./image_analysis")
-    for item in contents:
-       print(item)
+
     image      = np.array(Image.open(image_analysis_path)).astype(float)
     prev_image = np.array(Image.open(prev_image_analysis_path)).astype(float)
 
