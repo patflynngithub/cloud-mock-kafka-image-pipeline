@@ -150,7 +150,7 @@ $ ./set_up_flask_container.sh
 
 At the end of the bash script's Flask web server set up output, the webpage's URL will be displayed. For example:
 
-​	Image event viewer webpage URL: http://54.188.16.159
+>  Image event viewer webpage URL: http://54.188.16.159
 
 Ctrl-Left-click on the URL to open the webpage in your web browser. If this doesn't work, you can copy and paste the URL into the web browser's address field.
 
