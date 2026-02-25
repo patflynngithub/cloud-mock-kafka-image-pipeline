@@ -39,7 +39,7 @@ Schema:
 
 - image_id (automatically generated integer; primary key)
 - image_filename (string; indexed)
-- image_storage_key (string; Amazon S3 object key for the image)
+- image_object_key (string; Amazon S3 object key for the image)
 
 --------------------------------------------------------------------------
 

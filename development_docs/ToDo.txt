@@ -1,14 +1,11 @@
-To Do for mock pipeline
------------------------
+To Do for mock image pipeline
+-----------------------------
 
-- clean up CONSTANTS package/module setup
 - investigate ramifications of using -u="root" in docker run command
 - automate the process of building/running the Apache Kafka image/container and opening the command line
   windows for the python Kafka clients and running them
-- do tkinter stuff inside of container?
-- add logic to image event view webpage application that checks that
-  a proper entered image event alert positive integer number was actually used during
-  the preceding image pipeline run (i.e., not zero or too high)
-- move image pipeline to the Amazon Cloud
-
+- finish removing improper uses of exceptions (have done a lot of this already)
+- add exceptions where called for (e.g., multiple tries when a database connection/cursor/query or
+  object storage client/upload/download initially fails)
+- improve/add logging and sys.exit() code (note: logging does not automatically include sys.exit() output)
 

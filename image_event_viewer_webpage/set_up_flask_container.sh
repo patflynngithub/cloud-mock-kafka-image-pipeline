@@ -6,10 +6,9 @@ docker rmi python-flask-server_image:latest
 
 # Set up image event viewer Flask webpage docker image/container
 
-docker build -f Dockerfile_image_alert_webpage --progress=plain -t python-flask-server_image .
+cp -f ../CONSTANTS/CONSTANTS.py .
+cp -f ../CLOUD_INFO/CLOUD_INFO.py .
 
-# the .. in the -v argument below references the image pipeline's main application directory;
-# allows the Flask application in the container to access the data file results of the most 
-# recent image pipeline run
-docker run --rm -v .:/pipeline -p 80:8000 --name python-flask-server_container python-flask-server_image
+docker build --progress=plain -t python-flask-server_image .
+docker run --rm -p 80:8000 --name python-flask-server_container python-flask-server_image
 

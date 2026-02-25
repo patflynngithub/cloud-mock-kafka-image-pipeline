@@ -1,18 +1,11 @@
 """ 
-CONSTANTS for mock pipeline application using Apache Kafka
+CONSTANTS for mock image pipeline application using Apache Kafka.
 """
 
-# =====================================================================
-
 import sys
-
-if __name__ == "__main__":
-    print("Error: This file cannot be run directly. Please import it as a module.")
-    sys.exit(1)
+import os
 
 # =====================================================================
-
-import os
 
 # Apache Kafka topics
 IMAGE_ANALYSIS_TOPIC    = "image_analysis"
@@ -32,4 +25,10 @@ IMAGE_ANALYSIS_DIR     = CODE_DIR + "/image_analysis"        # directory to move
 
 # total number of images to be (generated and) received
 TOTAL_NUM_IMAGES = 10
+
+# --------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    print("Error: This file cannot be run directly. Please import it as a module.")
+    sys.exit(1)
 

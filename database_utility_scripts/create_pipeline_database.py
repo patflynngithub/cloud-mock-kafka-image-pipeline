@@ -10,10 +10,10 @@ Execution:
     $ python3 create_pipeline_database.py
 """
 
+import sys
+
 import mysql.connector
 from mysql.connector import Error
-
-import sys
 
 # Allows this utility to access the main application's CLOUD_INFO
 # module when the utility is executed from one of two places: 
@@ -76,7 +76,7 @@ def create_pipeline_database(host, user, password):
               CREATE TABLE {table_name} (
               image_id          INT AUTO_INCREMENT PRIMARY KEY,
               image_filename    VARCHAR(255) NOT NULL UNIQUE,
-              image_storage_key VARCHAR(255) UNIQUE
+              image_object_key  VARCHAR(255) UNIQUE
             );
             """
             cursor.execute(create_table_query)

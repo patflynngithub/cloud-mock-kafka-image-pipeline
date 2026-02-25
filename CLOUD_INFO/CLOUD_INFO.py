@@ -1,5 +1,5 @@
 """
-Provides info about Amazon Cloud resources that the image pipeline uses
+Provides info about Amazon Cloud resources that the mock image pipeline uses.
 """
 
 import sys
@@ -21,7 +21,7 @@ BUCKET_NAME = 'ngr-image-pipeline-bucket'
 def get_public_ipv4():
     """
     Gets the current public IPv4 address of the running Amazon Cloud EC2 instance
-    that this function is being executed on
+    that this function is being executed on.
     """
 
     try:
@@ -42,7 +42,7 @@ def get_public_ipv4():
         print(f"Error accessing metadata service: {e}")
         return None
 
-# =====================================================================
+# --------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     print("Error: This file cannot be run directly. Please import it as a module.")

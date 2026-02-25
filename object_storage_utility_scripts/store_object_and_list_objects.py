@@ -9,11 +9,11 @@ Execution:
     $ python3 store_object_and_list_objects.py
 """
 
-import boto3
-from datetime import datetime
-from botocore.exceptions import ClientError
-
 import sys
+from datetime import datetime
+
+import boto3
+from botocore.exceptions import ClientError
 
 # Allows this utility to access the main application's CLOUD_INFO
 # module when the utility is executed from one of two places: 
@@ -27,13 +27,13 @@ from CLOUD_INFO import BUCKET_NAME
 
 # =====================================================================
 
-# Boto3 automatically uses the IAM role attached to the EC2 instance
-object_storage_client = boto3.client('s3')
-object_storage_key    = 'text/first_storage_object.txt'
-
 try:
     # Generate content for storing data (or could be a file) to object storage
     content = 'The time now is ' + str(datetime.now())
+
+    # Boto3 automatically uses the IAM role attached to the EC2 instance
+    object_storage_client = boto3.client('s3')
+    object_storage_key    = 'text/first_storage_object.txt'
 
     # Upload the content to object storage
     object_storage_client.put_object(
@@ -49,7 +49,7 @@ try:
         print(f"Object: {an_object['Key']}")
 
 except ClientError as e:
-    print(f"Failed to access object strage: {e}")
+    print(f"Failed to access object storage: {e}")
 except Exception as e:
     print(f"An unexpected error occurred: {e}")
 

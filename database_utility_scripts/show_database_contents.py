@@ -8,10 +8,10 @@ Execution:
     $ python3 show_database_contents.py
 """
 
+import sys
+
 import mysql.connector
 from mysql.connector import Error
-
-import sys
 
 # Allows this utility to access the main application's CLOUD_INFO
 # module when the utility is executed from one of two places: 

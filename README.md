@@ -1,8 +1,8 @@
 # Amazon Cloud Mock Image Pipeline Using Apache Kafka
 
-### NOTE: this project is just a proof-of-concept image processing pipeline that runs on the Amazon Cloud and utilizes Amazon Cloud's RDS MySQL relational database and S3 object database services. This project was created very quickly in order to get something that worked and so that I could move on to other tasks that would further prepare me for my first Caltech IPAC job interview. Its code is, in a few places, clean,  well-structured, well-organized and well-architected, but mostly the code is not this. The error checking is very incomplete. Its configuration, both external of and internal to the code, is decidedly very manual (e.g., Amazon Cloud network and access settings in the code and its build and configuration commands/scripts). Please don't infer from this code about my coding skills, style, habits and software engineering skills. It will all be cleaned up on a future date.
 
-### NOTE:  To heighten my Python logging sophistication, I did a lot of trial and error on the first 65 lines of *image_event_alert.py* (because it's the simplest of the three Kafka python clients) to achieve a more nuanced understanding of the logging feature. To get both the console output and the log file contents the way I wanted them to look (not the same look), I tried two different approaches: 1) logging the same output to both the console and a log file, and 2) logging just to a log file and printing (print()) to the console. I finished for now at the second solution because it got me the results that I wanted. In the future, when I further investigate Python logging, I will likely find a more sophisticated way of getting the desired outputs with just logging. I need to move on for now to do other tasks to prepare for my first round interview with Caltech.
+
+### NOTE: this project's main purpose is to familiarize myself with Apache Kafka, an open-source, distributed event streaming platform. It is designed to run on Amazon Cloud and utilizes Amazon Cloud's RDS MySQL relational database and S3 object storage services. The Apache Kafka clients are written in Python, and the standalone webpage is done using Flask, which provides server-side  web programming using Python.
 
 
 
@@ -12,7 +12,7 @@
 
 #### Description
 
-This is a mock image processing pipeline using Apache Kafka. It runs on the Amazon Cloud, using this cloud's RDS MySQL relational database and S3 object database services. The pipeline has Kafka python clients doing the different stages of image processing work. It is adapted from the original local Linux PC-based mock image pipeline that didn't use any Amazon Cloud resources.
+This is a mock image processing pipeline using Apache Kafka. It runs on the Amazon Cloud, using this cloud's RDS MySQL relational database and S3 object store services. The pipeline has Kafka python clients doing the different stages of image processing work. It is adapted from the original local Linux PC-based mock image pipeline that didn't use any Amazon Cloud resources.
 
 You can look at a visualization of the pipeline in the *development_docs/* subdirectory.
 

@@ -152,7 +152,7 @@ def analyze_image(image_num, image_id, image_filename, image_analysis_path):
 if __name__ == "__main__":
 
     print()
-    print("Starting image analyzer client")
+    print("Starting image analysis Kafka python client ...")
     print("CODE_DIR = " + CODE_DIR)
     print()
 

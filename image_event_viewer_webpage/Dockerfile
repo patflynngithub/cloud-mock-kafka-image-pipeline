@@ -20,8 +20,9 @@ RUN apt update && \
     pip install boto3                  --break-system-packages
 
 # Copy server-side python code contents into the container
-# COPY app.py /usr/src/app
 COPY app.py ./
+COPY CONSTANTS.py ./
+COPY CLOUD_INFO.py ./
 
 # Expose port 8000
 EXPOSE 8000

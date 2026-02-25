@@ -8,10 +8,10 @@ Execution:
     $ python3 show_object_storage_keys.py
 """
 
+import sys
+
 import boto3
 from botocore.exceptions import ClientError
-
-import sys
 
 # Allows this utility to access the main application's CLOUD_INFO
 # module when the utility is executed from one of two places: 

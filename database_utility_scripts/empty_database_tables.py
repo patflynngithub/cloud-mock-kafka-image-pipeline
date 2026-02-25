@@ -9,10 +9,10 @@ Execution:
     $ python3 empty_database_tables.py
 """
 
+import sys
+
 import mysql.connector
 from mysql.connector import Error
-
-import sys
 
 # Allows this utility to access the main application's CLOUD_INFO
 # module when the utility is executed from one of two places: 
@@ -28,7 +28,7 @@ from CLOUD_INFO import DB_HOST, DB_NAME, DB_USER, DB_PASSWORD
 
 def empty_database_tables(host, database, user, password):
     """
-    Empties the image pipeline's database tables.
+    Empties the mock image pipeline's database tables.
     """
 
     rdb_connection = None

@@ -28,7 +28,7 @@ from CLOUD_INFO.CLOUD_INFO import DB_HOST, DB_NAME, DB_USER, DB_PASSWORD
 if __name__ == "__main__":
 
     print()
-    print("Started image event alert Kafka client")
+    print("Starting image event alert Kafka python client ...")
     print("CODE_DIR = " + CODE_DIR)
     print()
 

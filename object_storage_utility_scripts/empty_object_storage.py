@@ -8,9 +8,9 @@ Execution:
     $ python3 empty_object_storage.py
 """
 
-import boto3
-
 import sys
+
+import boto3
 
 # Allows this utility to access the main application's CLOUD_INFO
 # module when the utility is executed from one of two places: 

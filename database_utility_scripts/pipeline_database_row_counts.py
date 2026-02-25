@@ -1,6 +1,6 @@
 """
-This database utility counts the number of rows of data in each image pipeline
-database table.
+This database utility counts the number of rows of data in each mock image
+pipeline relational database table.
 
 Execution:
     $ python3 database_utility_scripts/pipeline_database_row_counts.py
@@ -9,10 +9,10 @@ Execution:
     $ python3 pipeline_database_row_counts.py
 """
 
+import sys
+
 import mysql.connector
 from mysql.connector import Error
-
-import sys
 
 # Allows this utility to access the main application's CLOUD_INFO
 # module when the utility is executed from one of two places: 
