@@ -54,6 +54,8 @@ The three Kafka python clients and *image_event_viewer_webpage/app.py* use host,
 
 Before each of the setup/execution (on the Amazon EC2 instance) sections below, you will need a new *ssh* session into the Amazon EC2 computing instance. You do this from a local PC, using a new terminal window (e.g., Gnome Terminal) for each *ssh* session. This will allow you to view the separate text outputs of the Apache Kafka broker ("server") and its three pipeline clients when executing. To *ssh* into your Amazon EC2 instance you will need your own Amazon EC2 computing instance public/private key pair (public key stored in a *.pem* file on your local PC; don't lose it!) and the instance's public DNS (or public IPv4 address). These addresses can be found on the Amazon Cloud EC2 console webpage. The below suggested command assumes that you have placed the mock image pipeline application (including all of its subirectories) in the instance's *~/cloud-mock-image-pipeline* subdirectory (e.g., using *scp*). Your instance's public dns or public IPv4 address will be different from the one that the below commands are using. Also, these addresses can change if you stop and start the instance.
 
+Open a new terminal window on your local PC:
+
 $ ssh -i /home/patrick/Desktop/holding/caltech/MockImagePipeline.pem ubuntu@ec2-35-94-18-229.us-west-2.compute.amazonaws.com -t "cd ~/cloud-mock-image-pipeline; exec $SHELL -i" 
 
 Before running the mock image pipeline, create the Amazon RDS MySQL relational database tables using a Python utility that I created. 
@@ -81,7 +83,7 @@ If you have run the mock image pipeline before you may need to clean out previou
 $ docker rm pipeline_container  
 $ docker rmi pipeline_image:latest
 
-To build/run the Docker image/container:
+To build/run the Docker image/container and automatically run Apache Kafka:
 
 $ docker build -t pipeline_image .  
 $ docker run --rm -v .:/pipeline --name pipeline_container -u="root" -p 9092:9092 pipeline_image
@@ -92,7 +94,7 @@ Note: that the *docker run* *--rm* argument causes the container to be automatic
 
 #### Enter the Apache Kafka container and run the Kafka image event alert client
 
-Open a new command-line window and *ssh* to the EC2 computing instance. Enter the following commands:  
+Open a new terminal window and *ssh* to the EC2 computing instance. Enter the following commands:  
 
 $ docker exec -it pipeline_container /bin/bash  
 (you will automatically be put in the  /pipeline directory of the container)  
@@ -101,7 +103,7 @@ $ python3 image_event_alert_client.py
 
 #### Enter the Apache Kafka container and run the Kafka image analysis client
 
-Open a new command-line window and *ssh* to the EC2 computing instance. Enter the following commands:  
+Open a new terminal window and *ssh* to the EC2 computing instance. Enter the following commands:  
 
 $ docker exec -it pipeline_container /bin/bash  
 (you will automatically be put in the  /pipeline directory of the container)  
@@ -110,7 +112,7 @@ $ python3 image_analysis_client.py
 
 #### Enter the Apache Kafka container and run the image receiving Kafka client
 
-Open a new command-line window and *ssh* to the EC2 computing instance. Enter the following commands:  
+Open a new terminal window and *ssh* to the EC2 computing instance. Enter the following commands:  
 
 $ docker exec -it pipeline_container /bin/bash
 (you will automatically be put in the /pipeline directory of the container)  
@@ -123,7 +125,7 @@ $ python3 image_receiving_client.py
 
 
 
-### If everything runs successfully (according to the text output of each Kafka client), you can further verify the contents of the application's Amazon Cloud RDS MySQL relational database and S3 object storage. This can be done with the Python relational database and object storage utilities I created:
+### If everything executes successfully (according to the text output of each Kafka client), you can further verify successful execution by examining the contents of the application's Amazon Cloud RDS MySQL relational database and S3 object storage. This can be done with the Python relational database and object storage utilities I created:
 
 $ python3 database_utility_scripts/show_database_contents.py  
 
@@ -137,24 +139,24 @@ $ python3 object_storage_utility_scripts/show_object_storage_keys.py
 
 ### Image Event Viewer Webpage
 
-There is an image event viewer webpage available that allows a user to enter an image event alert number to view the images associated with the image event.  
+There is a standalone (i.e., doesn't rely directly on Apache Kafka) image event viewer webpage available that allows a user to enter an image event alert number to view the images associated with the image event.  
 
 While the mock image pipeline is not required to be currently running, it is required to have completed successfully the last time the pipeline was run. This results in having its relational database and object storage properly and fully populated with image, image event and image event alert data.
 
-The webpage was created with the Flask web development framework, which allows using server-side Python scripting to dynamically create the webpage. 
+The webpage was created with the Flask web development framework, which allows using server-side Python scripting to dynamically create the webpages. 
 
-*ssh* to your Amazon EC2 instance. You will build/run the image/container that will automatically run Flask's development web server. Enter the following commands:
+Open a new terminal windows and *ssh* to your Amazon EC2 instance. You will build/run the image/container that will automatically run Flask's development web server. Enter the following commands:
 
 $ cd image_event_viewer_webpage
 $ ./set_up_flask_container.sh  
 
-At the end of the bash script's Flask web server set up output, the webpage's URL will be displayed. For example:
+At the end of the bash script's Flask web server setup output, the webpage's URL will be displayed. For example:
 
 >  Image event viewer webpage URL: http://54.188.16.159
 
 Ctrl-Left-click on the URL to open the webpage in your web browser. If this doesn't work, you can copy and paste the URL into the web browser's address field.
 
-Enter 1 or 2 for the image event alert number.
+Enter 1 or 2 for the image event alert number. You can also try entering invalid entries.
 
 ![Image Event Alert #1](development_docs/image_event_alert_screenshot.png)
 
