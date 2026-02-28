@@ -52,7 +52,7 @@ The three Kafka python clients and *image_event_viewer_webpage/app.py* use host,
 
 #### Accessing the Amazon EC2 computing instance
 
-Before each of the setup/execution (on the Amazon EC2 instance) sections below, you will need a new *ssh* session into the Amazon EC2 computing instance. You do this from a local PC, using a new terminal window (e.g., Gnome Terminal) for each *ssh* session. This will allow you to view the separate text outputs of the Apache Kafka broker ("server") and its three pipeline clients when executing. To *ssh* into your Amazon EC2 instance you will need your own Amazon EC2 computing instance public/private key pair (public key stored in a *.pem* file on your local PC; don't lose it!) and the instance's public DNS (or public IPv4 address). These addresses can be found on the Amazon Cloud EC2 console webpage. The below suggested command assumes that you have placed the mock image pipeline application (including all of its subirectories) in the instance's *~/cloud-mock-image-pipeline* subdirectory (e.g., using *scp*). Your instance's public dns or public IPv4 address will be different from the one the below commands are using. Also, these addresses can change if you stop and start the instance.
+Before each of the setup/execution (on the Amazon EC2 instance) sections below, you will need a new *ssh* session into the Amazon EC2 computing instance. You do this from a local PC, using a new terminal window (e.g., Gnome Terminal) for each *ssh* session. This will allow you to view the separate text outputs of the Apache Kafka broker ("server") and its three pipeline clients when executing. To *ssh* into your Amazon EC2 instance you will need your own Amazon EC2 computing instance public/private key pair (public key stored in a *.pem* file on your local PC; don't lose it!) and the instance's public DNS (or public IPv4 address). These addresses can be found on the Amazon Cloud EC2 console webpage. The below suggested command assumes that you have placed the mock image pipeline application (including all of its subirectories) in the instance's *~/cloud-mock-image-pipeline* subdirectory (e.g., using *scp*). Your instance's public dns or public IPv4 address will be different from the one that the below commands are using. Also, these addresses can change if you stop and start the instance.
 
 $ ssh -i /home/patrick/Desktop/holding/caltech/MockImagePipeline.pem ubuntu@ec2-35-94-18-229.us-west-2.compute.amazonaws.com -t "cd ~/cloud-mock-image-pipeline; exec $SHELL -i" 
 
@@ -78,7 +78,7 @@ Open a new terminal window and *ssh* to the EC2 computing instance.
 
 If you have run the mock image pipeline before you may need to clean out previous docker images/containers:
 
-$ docker rm pipeline_container
+$ docker rm pipeline_container  
 $ docker rmi pipeline_image:latest
 
 To build/run the Docker image/container:
