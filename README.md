@@ -147,12 +147,12 @@ The webpage was created with the Flask web development framework, which allows u
 
 Open a new terminal window and *ssh* to your Amazon EC2 instance. You will build/run the image/container that will automatically run Flask's development web server. Enter the following commands:
 
-$ cd image_event_viewer_webpage
+$ cd image_event_viewer_webpage  
 $ ./set_up_flask_container.sh  
 
-At the end of the bash script's Flask web server setup output, the webpage's URL will be displayed. For example:
+At the end of Flask web server setup output, the webpage's URL will be displayed. For example:
 
->  Image event viewer webpage URL: http://54.188.16.159
+>  Image event viewer webpage URL: http://54.188.16.159    (URL will be different for you)
 
 Ctrl-Left-click on the URL to open the webpage in your web browser. If this doesn't work, you can copy and paste the URL into the web browser's address field.
 
