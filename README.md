@@ -145,7 +145,7 @@ While the mock image pipeline is not required to be currently running, it is req
 
 The webpage was created with the Flask web development framework, which allows using server-side Python scripting to dynamically create the webpages. 
 
-Open a new terminal windows and *ssh* to your Amazon EC2 instance. You will build/run the image/container that will automatically run Flask's development web server. Enter the following commands:
+Open a new terminal window and *ssh* to your Amazon EC2 instance. You will build/run the image/container that will automatically run Flask's development web server. Enter the following commands:
 
 $ cd image_event_viewer_webpage
 $ ./set_up_flask_container.sh  
