@@ -150,7 +150,7 @@ Open a new terminal window and *ssh* to your Amazon EC2 instance. You will build
 $ cd image_event_viewer_webpage  
 $ ./set_up_flask_container.sh  
 
-At the end of Flask web server setup output, the webpage's URL will be displayed. For example:
+At the end of successfully setting up the Flask development web server, the webpage's URL will be displayed. For example:
 
 >  Image event viewer webpage URL: http://54.188.16.159    (URL will be different for you)
 
