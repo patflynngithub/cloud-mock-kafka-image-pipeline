@@ -7,13 +7,13 @@ import requests
 
 # =====================================================================
 
-# Amazon RDS endpoint and database credentials
+# Amazon RDS endpoint and database credentials info
 DB_HOST     = "image-pipeline.cja6aao2uw8s.us-west-2.rds.amazonaws.com"
 DB_NAME     = "image_pipeline"
 DB_USER     = "admin"
 DB_PASSWORD = "nancygraceroman"
 
-# Amazon S3 bucket name
+# Amazon S3 info
 BUCKET_NAME = 'ngr-image-pipeline-bucket'
 
 # =====================================================================
