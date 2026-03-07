@@ -46,13 +46,17 @@ Some useful Python utilities that I created are in the *database_utility_scripts
 
 The three Kafka python clients and *image_event_viewer_webpage/app.py* use host, database name, user, password and bucket name settings that are used to interact with the Amazon Cloud relational database and object storage. These settings are in *CLOUD_INFO.py*. You will need to change these.
 
-### Automatically setting up the mock image pipeline
+### Automatically set up and run the mock image pipeline
 
-To automatically set up and run the mock image pipeline (Apache Kafka broker and its clients), in the local PC's mock image pipeline main directory:  
+To automatically set up and run the mock image pipeline (Apache Kafka broker and its three clients), there is a Bash script in the local PC's mock image pipeline main directory.
+
+First, open up a local terminal window and set the EC2_IP environment variable to the public IPv4 address of the running Amazon EC2 instance that the pipeline will be run on. You can get this address by using the Amazon EC2 webpage console to view the instance's attributes. Bear in mind that if the instance has been stopped and restarted since the last time the pipeline was run on the instance, the public IPv4 address likely has changed.
+
+$ export EC2_IP=35.164.159.129  (for example; your instance's public IPv4 address will be different)  
 
 $ ./set_up_pipeline.sh  
 
-### Manually setting up the mock image pipeline
+### Or manually set up and run the mock image pipeline
 
 #### Some of the following commands are required to be executed in the application's main directory where its core python files are (e.g., *image_receiving_client.py*). In any event, unless otherwise noted, you should be in this directory before setting up and running all parts of the application,
 
