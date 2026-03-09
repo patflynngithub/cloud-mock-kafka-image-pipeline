@@ -9,4 +9,5 @@ To Do for mock image pipeline
 - monitoring apache kafka
 - dashboard for apache kafka
 - if wanted to do some batch processing using Apache Kafka, how would that work?
+- modify MySQL queries to avoid SQL injection
 

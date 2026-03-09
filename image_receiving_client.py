@@ -20,6 +20,8 @@ import os
 import sys
 import shutil
 import json
+import logging
+import time
 
 # Pillow for image handling
 from PIL import Image
@@ -29,7 +31,7 @@ from kafka import KafkaProducer
 
 # Amazon RDS MySQL relational database for storing image metadata
 import mysql.connector
-from mysql.connector import Error
+from mysql.connector import errorcode
 
 # Amazon S3 object storage for storing the images themselves
 import boto3
@@ -41,6 +43,25 @@ from CONSTANTS.CONSTANTS import *
 from CLOUD_INFO.CLOUD_INFO import DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, BUCKET_NAME
 
 # =====================================================================
+
+def copy_with_retry(src, dst, max_retries=3):
+    """
+    Copy a file with retries after failure. Mainly done for the case when
+    the underlying Amazon EFS file system has underlying temporary problems.
+    """
+
+    for attempt in range(max_retries):
+        try:
+            shutil.copy2(src, dst)
+            return
+        except (IOError, OSError) as e:
+            print(f"Copy file attempt {attempt + 1} failed: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(2) # Wait 2 seconds before retrying
+            else:
+                raise # Re-raise exception if all retries fail
+
+# ----------------------------------------------------------------------------
 
 def generate_image(image_num, image_filename):
     """
@@ -56,7 +77,7 @@ def generate_image(image_num, image_filename):
     # Use the original image for the first received image
     if image_num == 1:
         prev_image_recv_path = ""
-        shutil.copy(ORIGINAL_IMAGE_PATH, image_recv_path)
+        copy_with_retry(ORIGINAL_IMAGE_PATH, image_recv_path)
 
     # Generate an image from the previously received image
     else:
@@ -73,9 +94,88 @@ def generate_image(image_num, image_filename):
 
         # Copy the previous image w/o modification to generate the new image
         else:
-            shutil.copy(prev_image_recv_path, image_recv_path)
+            copy_with_retry(prev_image_recv_path, image_recv_path)
 
     return image_recv_path, prev_image_recv_path
+
+# ------------------------------------------------------------------------
+
+def store_image_metadata(image_filename, image_object_key):
+    """
+    Stores image metadata in relational database table. Returns the image_id number
+    (primary key) automatically generated when doing this.
+    """
+
+    # this will contain the primary key's integer value automatically generated
+    # when adding the image's metadata to the image metadata database table
+    image_id = -1
+
+    attempt  = 1
+    attempts = 3
+    delay    = 2
+    # loop is for retrying when "retryable" cursor.execute() error happens
+    while attempt <= attempts:
+    
+        try:
+            # if the connection is lost, attempt to reconnect
+            if not rdb_connection.is_connected():
+                rdb_connection.reconnect()
+                global cursor
+                cursor = rdb_connection.cursor()
+
+            # Add image's metadata to the image metadata database table
+
+            print(f"Adding image filename {image_filename} and its image object key {image_object_key} to the image metadata database table")
+            add_image_metadata_query = f"INSERT INTO image_metadata (image_filename, image_object_key) VALUES ('{image_filename}', '{image_object_key}')"
+            print(add_image_metadata_query)
+            cursor.execute(add_image_metadata_query)
+            break
+
+        # for this error that is out of the programmer's control, 
+        # will retry mulitple times with increasing delay to insert data into database table
+        except mysql.connector.OperationalError as err:
+            print(f"Operational Error when adding image metadata to image metadata table")
+            logging.error(err)
+            if attempt == attempts:
+                print(f"Failed after {attempts} attempts")
+                # will exit the program and print a traceback
+                raise RuntimeError("A fatal run-time error occurred. Exiting with traceback.")
+            print(f"Retrying ({attempt}/{attempts})...")
+            time.sleep(delay ** (attempt-1)) # Exponential backoff
+            attempt += 1
+            continue
+
+        # non-retryable error
+        except mysql.connector.Error as err:
+            print(f"Error when adding image metadata to image metadata table")
+            logging.error(err)
+            # will exit the program and print a traceback
+            raise RuntimeError("A fatal run-time error occurred. Exiting with traceback.")
+
+    try:
+        rdb_connection.commit()
+
+        # retrieve the integer just automatically generated for the new row's
+        # primary key image_id column in the image metadata table
+        image_id = cursor.lastrowid
+        print (f"Added image metadata. Image ID# is {image_id}")
+
+    except Error as e:
+        print("Error committing image metadata to the image metadata table")
+        logging.error(e)
+
+        rdb_connection.rollback() # Roll back the INSERT transaction
+
+        if cursor:
+            cursor.close()
+        if rdb_connection and rdb_connection.is_connected():
+            rdb_connection.close()
+            print("Database connection closed.")
+
+        # will exit the program and print a traceback
+        raise RuntimeError("A fatal run-time error occurred. Exiting with traceback.")
+
+    return image_id
 
 # ------------------------------------------------------------------------
 
@@ -87,42 +187,29 @@ def store_image(image_filename, image_recv_path):
     image_object_key = f'image/{image_filename}'
 
     try:
+        """
+        Note: Do not need to have retry logic for upload_file() method because
+              Boto3's built-in retry mechanism handles temporary, recoverable failures.
+              It can be relied on for network issues, timeouts, server-side Errors (HTTP 5xx),
+              and throttling Errors (HTTP 429).
+
+              For large files, the upload_file() method automatically leverages multipart uploads,
+              which breaks the file into parts and retries individual part failures without
+              restarting the entire upload. 
+        """
+
         object_storage_client.upload_file(image_recv_path, BUCKET_NAME, image_object_key)
-    except Exception as e:
-        sys.exit(f"Error trying to store image {image_filename} with object key {image_object_key}: {e}")
+        return image_object_key
 
-    return image_object_key
+    except ClientError as e:
+        # Log and handle AWS service-side errors (e.g., NoSuchBucket, AccessDenied)
+        logging.error(e)
+        error_code = e.response.get('Error', {}).get('Code')
+        print(f"AWS Error (while storing '{image_recv_path}'): {error_code}")
+    except FileNotFoundError:
+        logging.error(f"{e} The file '{image_recv_path}' was not found.")
 
-# ------------------------------------------------------------------------
-
-def store_image_metadata(image_filename, image_recv_path, image_object_key):
-    """
-    Stores image metadata in relational database. Returns the image_id number
-    automatically generated by adding a data row the image metadata database table.
-    """
-
-    # this will contain the primary key's integer value automatically generated
-    # when adding the image's metadata to the image metadata database table
-    image_id = -1
-
-    try:
- 
-        # Add image's metadata to the image metadata database table
-        print(f"Adding image filename {image_filename} and its image storage key {image_object_key} to the image metadata database table")
-        add_image_metadata_query = f"INSERT INTO image_metadata (image_filename, image_object_key) VALUES ('{image_filename}', '{image_object_key}')"
-        print(add_image_metadata_query)
-        cursor.execute(add_image_metadata_query)
-        rdb_connection.commit()
-
-        # retrieve the integer just automatically generated for the new row's
-        # primary key image_id column in the image metadata table
-        image_id = cursor.lastrowid
-        print (f"Added image metadata's' image ID# is {image_id}")
-
-    except Error as e:
-        sys.exit(f"Error adding image metadata to the image metadata table: {e}")
-
-    return image_id
+    raise RuntimeError("A run-time error occurred, exiting with traceback.")
 
 # -----------------------------------------------------------------------------------
 
@@ -139,14 +226,14 @@ def receive_image(image_num, image_filename, image_recv_path, prev_image_recv_pa
 
     # store image metadata in relational database;
     # returned new image_id will be passed to the Kafka image analysis client
-    image_id = store_image_metadata(image_filename, image_recv_path, image_object_key)
+    image_id = store_image_metadata(image_filename, image_object_key)
 
     # Copy received image to the image analysis directory
     # so that the Kafka image analysis client can analyze it
     # using the previously received image that was already
     # copied there in the previous iteration
     image_analysis_path = IMAGE_ANALYSIS_DIR + "/" + image_filename
-    shutil.copy(image_recv_path, image_analysis_path)
+    copy_with_retry(image_recv_path, image_analysis_path)
 
     # if on second or later received image in the image stream, remove the
     # previously received image from the image receiving directory
@@ -241,8 +328,9 @@ if __name__ == "__main__":
         object_storage_client.close()
         print("Object storage client is closed")
 
-    if rdb_connection is not None and rdb_connection.is_connected():
+    if cursor:
         cursor.close()
+    if rdb_connection is not None and rdb_connection.is_connected():
         rdb_connection.close()
         print("Relational database connection is closed")
 
