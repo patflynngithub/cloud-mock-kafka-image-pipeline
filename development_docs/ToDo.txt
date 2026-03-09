@@ -1,13 +1,21 @@
 To Do for mock image pipeline
 -----------------------------
 
-- investigate ramifications of using -u="root" in docker run command
 - finish removing improper uses of exceptions from copied code (have done a lot of this already)
 - add try/exception blocks where it is proper to do so (e.g., multiple tries when a database connection/cursor/query or
   object storage client/upload/download initially fails)
-- improve/add logging and sys.exit() code (note: logging does not automatically include sys.exit() output)
+- modify MySQL queries to avoid SQL injection
+- design document
+
+- investigate ramifications of using -u="root" in docker run command
 - monitoring apache kafka
 - dashboard for apache kafka
 - if wanted to do some batch processing using Apache Kafka, how would that work?
-- modify MySQL queries to avoid SQL injection
+- create restart capability for pipeline
+    Note: I spent some time starting to mentally architect a restart solution for when the pipeline
+          crashes. However, as I am currently reading through the excellent book "Apache Kafka
+          in Action" by Zelenin/Kropp, I realized that my initial thoughts on the nature of the
+          restart capability might miss out on utilizing Apache Kafka features that would make
+          easier and improve any restart capability. So, I'm waiting until I finish the book.
+
 

@@ -38,30 +38,11 @@ import boto3
 from botocore.exceptions import ClientError
 
 from CONSTANTS.CONSTANTS import *
-
 # relational database and object storage access info
 from CLOUD_INFO.CLOUD_INFO import DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, BUCKET_NAME
+from pipeline_utils.pipeline_utils import remove_ebs_file, copy_ebs_file
 
 # =====================================================================
-
-def copy_with_retry(src, dst, max_retries=3):
-    """
-    Copy a file with retries after failure. Mainly done for the case when
-    the underlying Amazon EFS file system has underlying temporary problems.
-    """
-
-    for attempt in range(max_retries):
-        try:
-            shutil.copy2(src, dst)
-            return
-        except (IOError, OSError) as e:
-            print(f"Copy file attempt {attempt + 1} failed: {e}")
-            if attempt < max_retries - 1:
-                time.sleep(2) # Wait 2 seconds before retrying
-            else:
-                raise # Re-raise exception if all retries fail
-
-# ----------------------------------------------------------------------------
 
 def generate_image(image_num, image_filename):
     """
@@ -77,7 +58,7 @@ def generate_image(image_num, image_filename):
     # Use the original image for the first received image
     if image_num == 1:
         prev_image_recv_path = ""
-        copy_with_retry(ORIGINAL_IMAGE_PATH, image_recv_path)
+        copy_ebs_file(ORIGINAL_IMAGE_PATH, image_recv_path)
 
     # Generate an image from the previously received image
     else:
@@ -94,7 +75,7 @@ def generate_image(image_num, image_filename):
 
         # Copy the previous image w/o modification to generate the new image
         else:
-            copy_with_retry(prev_image_recv_path, image_recv_path)
+            copy_ebs_file(prev_image_recv_path, image_recv_path)
 
     return image_recv_path, prev_image_recv_path
 
@@ -105,6 +86,8 @@ def store_image_metadata(image_filename, image_object_key):
     Stores image metadata in relational database table. Returns the image_id number
     (primary key) automatically generated when doing this.
     """
+
+    global cursor
 
     # this will contain the primary key's integer value automatically generated
     # when adding the image's metadata to the image metadata database table
@@ -120,7 +103,6 @@ def store_image_metadata(image_filename, image_object_key):
             # if the connection is lost, attempt to reconnect
             if not rdb_connection.is_connected():
                 rdb_connection.reconnect()
-                global cursor
                 cursor = rdb_connection.cursor()
 
             # Add image's metadata to the image metadata database table
@@ -235,19 +217,19 @@ def receive_image(image_num, image_filename, image_recv_path, prev_image_recv_pa
     # using the previously received image that was already
     # copied there in the previous iteration
     image_analysis_path = IMAGE_ANALYSIS_DIR + "/" + image_filename
-    copy_with_retry(image_recv_path, image_analysis_path)
+    copy_ebs_file(image_recv_path, image_analysis_path)
 
     # if on second or later received image in the image stream, remove the
     # previously received image from the image receiving directory
     # because don't need it anymore for generating the next image
     if image_num > 1:
-        os.remove(prev_image_recv_path)
+        remove_ebs_file(prev_image_recv_path)
 
     # if just received the last image in the image stream, don't need
     # to keep it around in the image receiving directory to use as a
     # a previous image to generate the next image
     if image_num == TOTAL_NUM_IMAGES:
-        os.remove(image_recv_path)
+        remove_ebs_file(image_recv_path)
 
     return image_id, image_analysis_path
 
