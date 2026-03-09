@@ -126,9 +126,11 @@ def store_image_metadata(image_filename, image_object_key):
             # Add image's metadata to the image metadata database table
 
             print(f"Adding image filename {image_filename} and its image object key {image_object_key} to the image metadata database table")
-            add_image_metadata_query = f"INSERT INTO image_metadata (image_filename, image_object_key) VALUES ('{image_filename}', '{image_object_key}')"
+            add_image_metadata_query = "INSERT INTO image_metadata (image_filename, image_object_key) VALUES (%s, %s)"
+            query_data               = (image_filename, image_object_key)
             print(add_image_metadata_query)
-            cursor.execute(add_image_metadata_query)
+            print(f"data = {query_data}")
+            cursor.execute(add_image_metadata_query, query_data)
             break
 
         # for this error that is out of the programmer's control, 

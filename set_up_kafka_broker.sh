@@ -4,6 +4,15 @@ echo
 echo "Trying to run the Apache Kafka container."
 echo
 
+# Clean out image directories in case previous pipeline run failed
+# and didn't empty them
+sudo rm -rf image_receiving/*.jpg
+sudo rm -rf image_analysis/*.jpg
+
+# Clear data in relational database and object storage
+python3 database_utility_scripts/empty_database_tables.py
+python3 object_storage_utility_scripts/empty_object_storage.py
+
 # Remove previous Apache Kafka container
 echo "Removing the previous Apache Kafka docker container, if it exists ..."
 docker rm pipeline_container
