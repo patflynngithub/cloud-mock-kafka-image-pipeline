@@ -11,6 +11,7 @@ IMAGE ANALYSIS:  This Kafka image analysis python client receives Apache Kafka m
 import os
 from io import BytesIO
 import json
+import logging
 
 # Numpy for doing math operations on the images
 import numpy as np
@@ -30,11 +31,197 @@ import boto3
 from botocore.exceptions import ClientError
 
 from CONSTANTS.CONSTANTS import *
-
 # relational database and object storage access info
 from CLOUD_INFO.CLOUD_INFO import DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, BUCKET_NAME
+from pipeline_utils.pipeline_utils import remove_ebs_file
 
-# =====================================================================
+# =========================================================================================
+
+def update_image_event_db_table_entry(difference_image_object_key, image_event_id):
+    """
+    Update the new image event's metadata to include the difference
+    image object key, which we didn't know before because we didn't
+    yet know the image event's' automatically generated image_event_id,
+    which is used to create the above-mentioned key.
+    """
+
+    global cursor
+
+    attempt  = 1
+    attempts = 3
+    delay    = 2
+
+    # loop is for retrying when "retryable" cursor.execute() error happens
+    while attempt <= attempts:
+    
+        try:
+            # if the connection is lost, attempt to reconnect
+            if not rdb_connection.is_connected():
+                rdb_connection.reconnect()
+                cursor = rdb_connection.cursor()
+
+            print(f"Updating new image event's difference image object key value")
+            update_image_event_query = "UPDATE image_event SET difference_image_object_key = %s WHERE image_event_id = %s"
+            query_data = (difference_image_object_key, image_event_id)
+            print(update_image_event_query)
+            print(f"data = {query_data}")
+            cursor.execute(update_image_event_query, query_data)
+            print(f"Image event ID# {image_event_id} updated with difference image object key {difference_image_object_key}")
+            break
+
+        # for this error that is out of the programmer's control,
+        # will retry mulitple times with increasing delay to update data in database table
+        except mysql.connector.OperationalError as err:
+            print(f"Operational Error when updating an image event in image event table")
+            logging.error(err)
+            if attempt == attempts:
+                print(f"Failed after {attempts} attempts")
+                # will exit the program and print a traceback
+                raise RuntimeError("A fatal run-time error occurred. Exiting with traceback.")
+            print(f"Retrying ({attempt}/{attempts})...")
+            time.sleep(delay ** (attempt-1)) # Exponential backoff
+            attempt += 1
+            continue
+
+        # non-retryable error
+        except mysql.connector.Error as err:
+            print(f"Error when updating image event in image event table")
+            logging.error(err)
+            # will exit the program and print a traceback
+            raise RuntimeError("A fatal run-time error occurred. Exiting with traceback.")
+
+    try:
+        rdb_connection.commit()
+        print(f"Image event ID# {image_event_id} committed")
+    except Error as e:
+        print("Error committing image event metadata to the image metadata table")
+        logging.error(e)
+
+        rdb_connection.rollback() # Roll back the UPDATE transaction
+
+        if cursor:
+            cursor.close()
+        if rdb_connection and rdb_connection.is_connected():
+            rdb_connection.close()
+            print("Database connection closed.")
+
+        # will exit the program and print a traceback
+        raise RuntimeError("A fatal run-time error occurred. Exiting with traceback.")
+
+# ----------------------------------------------------------------------------------
+
+def store_difference_image(difference_image_object_key, diff_image_data):
+    """
+    Stores the image event's difference image in object storage
+    """
+
+    try:
+        """
+        Note: Do not need to have retry logic for put_obect() method because
+              Boto3's built-in retry mechanism handles temporary, recoverable failures.
+              It can be relied on for network issues, timeouts, server-side Errors (HTTP 5xx),
+              and throttling Errors (HTTP 429).
+        """
+
+        # upload the bytes directly to Amazon S3
+        object_storage_client.put_object(
+            Bucket=BUCKET_NAME,
+            Key=difference_image_object_key,
+            Body=diff_image_data,
+            ContentType='image/jpeg')
+        print(f"Image {difference_image_object_key} saved in object storage")
+
+    except ClientError as e:
+        # Log and handle AWS service-side errors (e.g., NoSuchBucket, AccessDenied)
+        logging.error(e)
+        error_code = e.response.get('Error', {}).get('Code')
+        print(f"AWS Error (while storing '{difference_image_object_key}'): {error_code}")
+        raise RuntimeError("A run-time error occurred, exiting with traceback.")
+    except FileNotFoundError:
+        logging.error(f"{e} The file '{difference_image_object_key}' was not found.")
+        raise RuntimeError("A run-time error occurred, exiting with traceback.")
+
+# ----------------------------------------------------------------------------------
+
+def store_image_event():
+    """
+    Add the new image event's' metadata to the image event database table,
+    except for the difference image object key, which we don't have
+    yet because we don't yet know the table's automatically generated
+    image_event_id, which is used to create the above-mentioned key.
+    """
+
+    global cursor
+
+    image_event_id = -1
+
+    attempt  = 1
+    attempts = 3
+    delay    = 2
+    # loop is for retrying when "retryable" cursor.execute() exception happens
+    while attempt <= attempts:
+    
+        try:
+            # if the connection is lost, attempt to reconnect
+            if not rdb_connection.is_connected():
+                rdb_connection.reconnect()
+                cursor = rdb_connection.cursor()
+
+            print(f"Adding new image event to the image event database table")
+            add_image_event_query = f"INSERT INTO image_event (image_id) VALUES (%s)"
+            query_data            = (image_id,)
+            print(add_image_event_query)
+            print(f"data = {query_data}")
+            cursor.execute(add_image_event_query, query_data)
+            break
+
+        # for this error that is out of the programmer's control and is retryable
+        # will retry mulitple times with increasing delay to insert data into database table
+        except mysql.connector.OperationalError as err:
+            print(f"Operational Error when adding image event to image event table")
+            logging.error(err)
+            if attempt == attempts:
+                print(f"Failed after {attempts} attempts")
+                # will exit the program and print a traceback
+                raise RuntimeError("A fatal run-time error occurred. Exiting with traceback.")
+            print(f"Retrying ({attempt+1}/{attempts})...")
+            time.sleep(delay ** (attempt-1)) # Exponential backoff
+            attempt += 1
+            continue
+
+        # non-retryable error
+        except mysql.connector.Error as err:
+            print(f"Error when adding image event to image event table")
+            logging.error(err)
+            # will exit the program and print a traceback
+            raise RuntimeError("A fatal run-time error occurred. Exiting with traceback.")
+
+    try:
+        rdb_connection.commit()
+
+        # this is the unique integer automatically generated for the new data row's
+        # image event id column in the image event table
+        image_event_id = cursor.lastrowid
+        print(f"Image event created with ID # {image_event_id}")
+
+    except Error as e:
+        print("Error committing image event metadata to the image metadata table")
+        logging.error(e)
+
+        rdb_connection.rollback() # Roll back the INSERT transaction
+
+        if cursor:
+            cursor.close()
+        if rdb_connection and rdb_connection.is_connected():
+            rdb_connection.close()
+            print("Database connection closed.")
+
+        # will exit the program and print a traceback
+        raise RuntimeError("A fatal run-time error occurred. Exiting with traceback.")
+
+    return image_event_id
+
+# ----------------------------------------------------------------------------------
 
 def analyze_image(image_num, image_id, image_filename, image_analysis_path):
     """
@@ -75,12 +262,12 @@ def analyze_image(image_num, image_id, image_filename, image_analysis_path):
     # After comparing the two most recent images, the previous image is not needed
     # in the image analysis directory anymore. The current image will become the
     # previous image for the next analyzed image
-    os.remove(prev_image_analysis_path)
+    remove_ebs_file(prev_image_analysis_path)
 
     # If we are dealing with the last received image, it doesn't need to be kept around
     # in the image analysis directory 
     if image_num == TOTAL_NUM_IMAGES:
-        os.remove(image_analysis_path)
+        remove_ebs_file(image_analysis_path)
 
     # if the two images are the same
     if l2_norm == 0:
@@ -89,7 +276,13 @@ def analyze_image(image_num, image_id, image_filename, image_analysis_path):
     # else if the two images are different; an image event has occurred
     else:
 
-        print(f"Image numbers {image_num} and {prev_image_num} are different")
+        print(f"The #{image_num} and #{prev_image_num} images are different")
+
+        image_event_id = store_image_event()
+
+        # Now that we know the new image event's ID, we can save the difference image to
+        # Amazon S3 object storage;
+        # the image will be stored directly from memory (rather than from a file in the filesystem)
 
         # Convert difference array to RGB format (uint8: 0...255)
         diff_min   = difference.min()
@@ -99,51 +292,16 @@ def analyze_image(image_num, image_id, image_filename, image_analysis_path):
         diff_uint8 = (diff_01 * 255.0).astype(np.uint8)
         diff_image = Image.fromarray(diff_uint8, 'RGB')
 
-        # Add the new image event's' metadata to the image event database table,
-        # except for the difference image object key, which we don't have
-        # yet because we don't yet know the table's automatically generated
-        # image_event_id, which is used to create the before mentioned key.
-
-        image_event_id = -1
-
-        print(f"Adding new image event to the image event database table")
-        add_image_event_query = f"INSERT INTO image_event (image_id) VALUES ('{image_id}')"
-        print(add_image_event_query)
-        cursor.execute(add_image_event_query)
-        rdb_connection.commit()
-
-        # this is the unique integer automatically generated for the new data row's
-        # image event id column in the image event table
-        image_event_id = cursor.lastrowid
-        print(f"Image event created with ID # {image_event_id}")
-
-        # Now that we know the new image event's ID, we can save the difference image to
-        # Amazon S3 object storage;
-        # the image will be stored directly from memory (rather than from a file in the filesystem)
-
-        difference_image_object_key = f"difference_image/image_event_{image_event_id:05d}.jpg"
         buffer = BytesIO()
         diff_image.save(buffer, format="JPEG")
-        image_data = buffer.getvalue()
+        diff_image_data = buffer.getvalue()
 
-        # upload the bytes directly to Amazon S3
-        object_storage_client.put_object(
-            Bucket=BUCKET_NAME,
-            Key=difference_image_object_key,
-            Body=image_data,
-            ContentType='image/jpeg')
+        difference_image_object_key = f"difference_image/image_event_{image_event_id:05d}.jpg"
+
+        store_difference_image(difference_image_object_key, diff_image_data)
         diff_image.close()
 
-        # Update the new image event's metadata to include the difference
-        # image object key, which we didn't know before because we didn't
-        # yet know the image event's' automatically generated image_event_id,
-        # which is used to create the before mentioned key.
-
-        print(f"Updating new image event's difference image object key value")
-        update_image_event_query = f"UPDATE image_event SET difference_image_object_key = '{difference_image_object_key}' WHERE image_event_id = {image_event_id}"
-        print(update_image_event_query)
-        cursor.execute(update_image_event_query)
-        rdb_connection.commit()
+        update_image_event_db_table_entry(difference_image_object_key, image_event_id)
 
         return [True, image_event_id]
 
