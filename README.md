@@ -155,14 +155,15 @@ While the mock image pipeline is not required to be currently running, it is req
 
 The webpage was created with the Flask web development framework, which allows using server-side Python scripting to dynamically create the webpages. 
 
-Open a new terminal window and *ssh* to your Amazon EC2 instance. You will build/run the image/container that will automatically run Flask's development web server. Enter the following commands:
+Open a new terminal window and run the following bash script in the pipeline's main application directory on the local PC. The script will set up and run the Image Event Viewer Web Server on the Amazon EC2 instance. The image/container are built/run and will automatically execute Flask's development web server. Make sure the EC2_IP environment variable is set to the pipeline's Amazon EC2 instance public IPv4 address. Enter the following commands on the local PC:
 
-$ cd image_event_viewer_webpage  
-$ ./set_up_flask_container.sh  
+$ export EC2_IP=35.87.77.17   (for example)  
+
+$ ./set_up_image_event_web_server.sh  
 
 At the end of successfully setting up the Flask development web server, the webpage's URL will be displayed. For example:
 
->  Image event viewer webpage URL: http://54.188.16.159    (URL will be different for you)
+>  Image event viewer webpage URL: http://35.87.77.17    (URL will be different for you)
 
 Ctrl-Left-click on the URL to open the webpage in your web browser. If this doesn't work, you can copy and paste the URL into the web browser's address field.
 
