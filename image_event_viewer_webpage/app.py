@@ -58,7 +58,7 @@ def get_stored_image(image_object_key):
 @app.route('/difference_image/<obj_key_suffix>')
 def serve_image(obj_key_suffix):
     """
-    Get webpage requested image from object storage and send it to the web browser
+    Get webpage-requested image from object storage and send it to the web browser
     """
 
     route_hardcoded_part = request.url_rule.rule.split('<')[0] # e.g., Returns "/user/" part of "/user/<username>/profile"
@@ -92,6 +92,7 @@ def serve_image(obj_key_suffix):
 
     image_in_memory = get_stored_image(image_object_key)
 
+    # send requested image to web browser
     return send_file(image_in_memory,
                      mimetype='image/jpeg',
                      download_name=download_name)
@@ -103,12 +104,13 @@ def get_image_object_keys(alert_num):
     Retrieves from the relational database the image object keys for the
     stored images associated with the image event alert number.
 
-    If the image event alert number is a valid run, True and the image
-    object keys are returned. Otherwise, False and None values are returned'
+    If the image event alert number is a valid one, True and the image
+    object keys are returned. Otherwise, False and None values are returned.
     """
 
     # at this point, we know alert_num is a valid positive integer,
-    # but we don't know whether it is a before-generated alter number
+    # but we don't know whether it is a valid alert number in the
+    # image event alert database table.
 
     alert_num = int(alert_num)
 
@@ -116,6 +118,8 @@ def get_image_object_keys(alert_num):
     image_object_key            = ""
     image_event_id              = -1
     difference_image_object_key = ""
+
+    result = None
 
     try:
 
@@ -140,7 +144,7 @@ def get_image_object_keys(alert_num):
         cursor.execute(image_object_keys_query)
         result = cursor.fetchone()
 
-        # if not a before-generated alert number
+        # if not an alert number in the database table
         if result is None:
             return False, None, None, None
 
@@ -158,7 +162,7 @@ def get_image_object_keys(alert_num):
             conn.close()
             print("Database connection closed.")    
 
-    prev_image_id  = image_id -1 
+    prev_image_id         = image_id -1 
     prev_image_object_key = f"image/image_{prev_image_id:05d}.jpg"
 
     return True, image_object_key, difference_image_object_key, prev_image_object_key
@@ -181,11 +185,12 @@ def is_positive_integer(a_string):
 @app.route('/')
 def display_page():
     """
-    Displays the image event alert number entry dynamic webpage. 
-    It handles two states of the webpage. First is the initial
-    accepting of input of an image event alert number. Second is
-    the display of the image event images associated with the
-    input alert number.
+    Displays the image event viewer dynamic webpage.
+    It handles mulitple states of the webpage. First is the initial
+    accepting of input of an image event alert number. Second is the
+    error warning if an invalid image event alert number is entered.
+    Third is the display of the image event images associated with the
+    entered valid input alert number.
     """
 
     # note extra empty line to end the header
@@ -249,7 +254,7 @@ def display_page():
 
 if __name__ == '__main__':
 
-    # Web address for image event viewer webpage
+    # Obtain IPv4 address and URL for image event viewer webpage
     WEB_SERVER_IPV4_ADDRESS = get_public_ipv4()
     WEB_SERVER_URL          = "http://" + WEB_SERVER_IPV4_ADDRESS
     print(f"Image event viewer webpage URL: {WEB_SERVER_URL}")
@@ -262,5 +267,4 @@ if __name__ == '__main__':
     }
 
     app.run(host="0.0.0.0", port=8000, debug=True)
-
 

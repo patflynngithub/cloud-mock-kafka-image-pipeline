@@ -11,7 +11,7 @@ if [ "$?" -ne 0 ]; then
     exit 1
 fi
 
-# make sure EC2 instance IPv4 variable has beens et
+# make sure EC2 instance IPv4 variable has been set
 if [ -n "${EC2_IP+x}" ]; then
     echo "EC2 instance public IPV4 address: $EC2_IP"
 else
